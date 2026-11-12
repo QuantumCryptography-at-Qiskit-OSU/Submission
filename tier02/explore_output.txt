@@ -1,0 +1,41 @@
+A. BB84, Bob picks random bases
+   link           kept  QBER(check)  wrong key bits
+   clean           511       0.0%  0/255
+   Eve on all      520      25.8%  71/264
+   About half the qubits survive sifting. Eve guesses Alice's basis wrong
+   half the time, and a wrong guess flips Bob's result half the time:
+   1/2 x 1/2 = 25% errors. Clean links have none.
+
+B. Bob always measures in Z (no basis choice)
+   clean          kept  486  QBER(check)   0.0%  wrong key bits 0/230
+   Eve on all     kept  535  QBER(check)  25.0%  wrong key bits 69/279
+   Also fine on these links: Alice's bases are already random. Random
+   bases on Bob's side are what BB84 prescribes, and they matter once an
+   attacker could predict or steer Bob's choices.
+
+C. No sifting: use every bit Bob measured, ignoring Alice's bases
+   clean link, all 1024 bits: 260 wrong (25%)
+   The mismatched-basis half is a coin flip, so about 25% of ALL bits are
+   wrong, even without Eve. A key with 25% errors decrypts to garbage.
+
+D. Eve taps only a fraction of the qubits: QBER on the check set
+   fraction tapped  QBER   (theory 25% x fraction)
+                 0%   0.0%     0.0%
+                10%   3.1%     2.5%
+                25%   6.2%     6.2%
+                50%  10.5%    12.5%
+               100%  23.4%    25.0%
+   Catching a full tap with k check bits fails with probability (3/4)^k:
+     k =  5: missed 23.73%
+     k = 10: missed 5.63%
+     k = 20: missed 0.32%
+     k = 50: missed 0.00%
+   We had about 140 sifted check bits per link, so a miss is impossible in practice.
+
+E. Noise instead of Eve (clean link, depolarizing error on Bob's gates)
+   p = 0.0   QBER(check) =  0.0%
+   p = 0.02  QBER(check) =  0.4%
+   p = 0.1   QBER(check) =  9.4%
+   Real hardware has some noise, so BB84 compares QBER against a threshold
+   (about 11% for the simplest proof) instead of requiring zero errors.
+   Here the gap is huge: 0% versus ~21-25%, so a simple 'lowest QBER wins' works.

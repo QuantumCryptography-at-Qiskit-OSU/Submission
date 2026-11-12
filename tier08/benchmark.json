@@ -1,0 +1,91 @@
+{
+  "tier": 8,
+  "answer": "QC-08: inside is a map of old tunnels under Ohio Stadium",
+  "methods": [
+    {
+      "name": "classical trial division",
+      "kind": "classical",
+      "success_rate": 1.0,
+      "queries_or_oracle_calls": 4,
+      "wall_seconds": 2.424310000606056e-07,
+      "qubits": 0,
+      "two_qubit_gates": 0,
+      "depth": 4,
+      "noisy_success": null,
+      "notes": "deterministic, tiny N; comparison only"
+    },
+    {
+      "name": "classical Fermat",
+      "kind": "classical",
+      "success_rate": 1.0,
+      "queries_or_oracle_calls": 1,
+      "wall_seconds": 1.8384999998488639e-07,
+      "qubits": 0,
+      "two_qubit_gates": 0,
+      "depth": 1,
+      "noisy_success": null,
+      "notes": "deterministic, tiny N; comparison only"
+    },
+    {
+      "name": "classical Pollard rho",
+      "kind": "classical",
+      "success_rate": 1.0,
+      "queries_or_oracle_calls": 1,
+      "wall_seconds": 2.1201250001467997e-07,
+      "qubits": 0,
+      "two_qubit_gates": 0,
+      "depth": 1,
+      "noisy_success": null,
+      "notes": "deterministic, tiny N; comparison only"
+    },
+    {
+      "name": "Shor, recycled control (submitted)",
+      "kind": "quantum",
+      "success_rate": 1.0,
+      "queries_or_oracle_calls": 24,
+      "wall_seconds": 1.1684160232543945,
+      "two_qubit_gates": 5053,
+      "depth": 10425,
+      "total_gates": 14920,
+      "qubits": 9,
+      "noisy_success": {
+        "cx_error=0.0": 0.992,
+        "cx_error=0.0001": 0.996,
+        "cx_error=0.0003": 0.97,
+        "cx_error=0.001": 0.642
+      },
+      "notes": "a=2, t=10 phase bits, 24 shots per run; success is chance one run factors N"
+    },
+    {
+      "name": "Shor, textbook full register",
+      "kind": "quantum",
+      "success_rate": 1.0,
+      "queries_or_oracle_calls": 24,
+      "wall_seconds": 90.76163792610168,
+      "two_qubit_gates": 4966,
+      "depth": 10007,
+      "total_gates": 14559,
+      "qubits": 18,
+      "noisy_success": null,
+      "notes": "same multipliers, 10 counting qubits + inverse QFT"
+    },
+    {
+      "name": "Grover factoring",
+      "kind": "quantum",
+      "success_rate": 0.964,
+      "queries_or_oracle_calls": 3,
+      "wall_seconds": 0.7669568061828613,
+      "two_qubit_gates": 1776,
+      "depth": 2278,
+      "total_gates": 4374,
+      "qubits": 12,
+      "noisy_success": {
+        "cx_error=0.0": 0.9775,
+        "cx_error=0.0001": 0.83,
+        "cx_error=0.0003": 0.65,
+        "cx_error=0.001": 0.31
+      },
+      "notes": "3 Grover rounds over 32 candidates, success = one shot is a valid pair"
+    }
+  ]
+}

@@ -1,0 +1,114 @@
+{
+  "tier": 7,
+  "answer": "QC-07: ask the night librarian for Folio 1870-Q, not 1870-R",
+  "methods": [
+    {
+      "name": "A. classical brute force over keys",
+      "kind": "classical",
+      "success_rate": 1.0,
+      "queries_or_oracle_calls": 16384,
+      "wall_seconds": 0.17,
+      "qubits": 0,
+      "two_qubit_gates": 0,
+      "depth": 0,
+      "noisy_success": null,
+      "notes": "decrypt with every key and test the QC-07 prefix; 2^n cost, never touches U"
+    },
+    {
+      "name": "B. classical angle scan vs matrix of U",
+      "kind": "classical",
+      "success_rate": 1.0,
+      "queries_or_oracle_calls": 16384,
+      "wall_seconds": 0.016,
+      "qubits": 0,
+      "two_qubit_gates": 0,
+      "depth": 0,
+      "noisy_success": null,
+      "notes": "reads U and the eigenstate as numbers (forbidden for the tier); a direct eigenvalue read is O(1) and would be the real shortcut"
+    },
+    {
+      "name": "C. repeated Hadamard test (1 use of U per shot)",
+      "kind": "classical",
+      "success_rate": 0.2,
+      "queries_or_oracle_calls": 2000000,
+      "wall_seconds": 25.3,
+      "qubits": 2,
+      "two_qubit_gates": 2,
+      "depth": 17,
+      "noisy_success": null,
+      "notes": "rms error ~ 2245/sqrt(N) grid steps; need ~1.3e+08 shots per readout for 99% exact; success_rate measured at 10^6 shots"
+    },
+    {
+      "name": "D. textbook QPE, 14 counting qubits + inverse QFT",
+      "kind": "quantum",
+      "success_rate": 1.0,
+      "queries_or_oracle_calls": 16383,
+      "wall_seconds": 1.934,
+      "qubits": 15,
+      "two_qubit_gates": 230,
+      "depth": 269,
+      "noisy_success": {
+        "0": 1.0,
+        "0.0001": 0.9733333333333334,
+        "0.001": 0.8366666666666667,
+        "0.01": 0.17,
+        "0.03": 0.006666666666666667
+      },
+      "notes": "oracle_calls = physical U applications per shot (sum of 2^j); here U^(2^j) is built from the matrix as one gate each (14 gates)"
+    },
+    {
+      "name": "D. textbook QPE, t=4 (too few bits)",
+      "kind": "quantum",
+      "success_rate": 0.0,
+      "queries_or_oracle_calls": 15,
+      "wall_seconds": 0.077,
+      "qubits": 5,
+      "two_qubit_gates": 26,
+      "depth": 79,
+      "noisy_success": null,
+      "notes": "success_rate is for the exact 14-bit key; the top 4 bits come out right with P=0.99"
+    },
+    {
+      "name": "D. textbook QPE, t=8 (too few bits)",
+      "kind": "quantum",
+      "success_rate": 0.0,
+      "queries_or_oracle_calls": 255,
+      "wall_seconds": 0.073,
+      "qubits": 9,
+      "two_qubit_gates": 84,
+      "depth": 159,
+      "noisy_success": null,
+      "notes": "success_rate is for the exact 14-bit key; the top 8 bits come out right with P=0.96"
+    },
+    {
+      "name": "D. textbook QPE, t=12 (too few bits)",
+      "kind": "quantum",
+      "success_rate": 0.0,
+      "queries_or_oracle_calls": 4095,
+      "wall_seconds": 0.076,
+      "qubits": 13,
+      "two_qubit_gates": 174,
+      "depth": 239,
+      "noisy_success": null,
+      "notes": "success_rate is for the exact 14-bit key; the top 12 bits come out right with P=0.80"
+    },
+    {
+      "name": "E. iterative (semiclassical) QPE, 2 qubits [submitted]",
+      "kind": "quantum",
+      "success_rate": 1.0,
+      "queries_or_oracle_calls": 16383,
+      "wall_seconds": 0.182,
+      "qubits": 2,
+      "two_qubit_gates": 2,
+      "depth": 17,
+      "noisy_success": {
+        "0": 1.0,
+        "0.0001": 1.0,
+        "0.001": 1.0,
+        "0.01": 1.0,
+        "0.03": 1.0
+      },
+      "notes": "14 circuits, 1 shot each is enough; checker reports 2q=2, depth 11, 16 gates, 2 active qubits"
+    }
+  ]
+}

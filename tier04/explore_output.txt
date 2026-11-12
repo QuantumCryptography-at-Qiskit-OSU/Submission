@@ -1,0 +1,69 @@
+A. Classical brute force: ask all 1024 inputs (comparison-only)
+   queries: 1024, found s = 1100011000 in 8.0 s (512 colliding pairs)
+   f takes 512 distinct values, exactly 2-to-1: True
+   Sequential scan needs only 2^(top bit of s) + 1 queries here
+   (top bit 9: 513 queries), but the worst case is 2^(n-1) + 1 = 513.
+
+B. Classical birthday search: random inputs until two answers match
+   one live run on Aer: 61 queries, 0.76 s
+   3000 simulated runs: mean 40.1, median 38, max 122 queries (theory sqrt(pi x 1024 / 2) = 40)
+   chance to have found s within a budget of q questions:
+     q =   8:   2.7%
+     q =  16:  10.5%
+     q =  32:  39.2%
+     q =  64:  87.3%
+     q = 128: 100.0%
+
+C. Simon's algorithm, ideal (Aer), real oracle
+   4000 shots in 0.21 s; first runs: ['0010111100', '1011010000', '1000101000', '1100111100', '0110110110']
+   check: every y has y.s = 0: True
+   number of runs k -> chance the k equations pin s down (measured / theory):
+     k =  6:   0.0%   (theory   0.0%)
+     k =  8:   0.0%   (theory   0.0%)
+     k =  9:  30.2%   (theory  28.9%)
+     k = 10:  57.8%   (theory  57.8%)
+     k = 12:  88.9%   (theory  88.0%)
+     k = 15:  98.1%   (theory  98.4%)
+     k = 20: 100.0%   (theory 100.0%)
+     k = 40: 100.0%   (theory 100.0%)
+   runs until s is unique: mean 10.7, max 20 (theory n - 1 + 1.6 = 10.6)
+   our solution uses 40 runs: success 100.0% over 100 trials
+
+D. Simon under noise: depolarizing error after every cx
+   183 cx gates in the circuit; two decoders per run: strict GF(2) solve versus majority vote
+   p(cx)      strict     vote   (trials of 200 shots)
+   0.0          100%     100%
+   0.0001         0%     100%
+   0.001          0%     100%
+   0.003          0%     100%
+   0.01           0%     100%
+   0.03           0%     100%
+   0.1            0%       0%
+   Strict solving breaks at the first wrong y (one noisy equation can rule out
+   the true s). Voting only needs the true s to win a majority of the runs.
+
+E. Simon with the output register measured first (hint 1 version)
+   60 runs, s recovered: True; every y.s = 0: True
+   Same equations, same cost. Collapsing the output first only makes the picture
+   easier to explain: the inputs hold x and x XOR s, and H turns that into y.s = 0.
+
+F. Grover search for s (different algorithm, oracle used twice per round)
+   f(0) = 231; 17 rounds, 35 oracle calls in one circuit (1 classical + 2/round)
+   400 shots: P(s) = 0.50, P(0) = 0.50, most common non-zero = 1100011000 (s = 1100011000)
+   7310 cx gates, depth 12095: about 39x bigger than Simon
+   Quadratic speed-up only (about sqrt(2^n) rounds), so Simon's exponential win is lost.
+
+G. Scaling with n (our own small oracles; Simon on Aer, classical by simulation)
+     n  Simon runs (mean)   classical queries (mean)  classical worst
+     3                2.0                        3.7                5
+     4                3.0                        4.9                9
+     5                7.0                        7.2               17
+     6                7.0                        9.9               33
+     7                9.2                       14.1               65
+     8                7.8                       19.9              129
+     9                8.0                       28.6              257
+    10               11.4                       40.7              513
+    11               10.2                       57.0             1025
+   Extrapolated: n = 64: Simon ~ 66 runs, classical ~ 1.25 x 2^32 = 5.4e9 queries;
+                 n = 128: Simon ~ 130 runs, classical ~ 2.3e19 queries.
+   (Each Simon run still costs one oracle call, and the oracle itself grows with n.)

@@ -1,0 +1,99 @@
+{
+  "tier": 6,
+  "answer": "QC-06: the Thompson Library elevator stops twice on floor 8",
+  "methods": [
+    {
+      "name": "Classical brute force, full decrypt of every key",
+      "kind": "classical",
+      "success_rate": 1.0,
+      "queries_or_oracle_calls": 16384,
+      "wall_seconds": 8.151682228000027,
+      "qubits": null,
+      "two_qubit_gates": null,
+      "depth": null,
+      "noisy_success": null,
+      "notes": "comparison only"
+    },
+    {
+      "name": "Classical brute force, staged (byte 0 first)",
+      "kind": "classical",
+      "success_rate": 1.0,
+      "queries_or_oracle_calls": 16384,
+      "wall_seconds": 0.10736733100020501,
+      "qubits": null,
+      "two_qubit_gates": null,
+      "depth": null,
+      "noisy_success": null,
+      "notes": "comparison only; one cheap test per key, then the checksum on the 64 passers"
+    },
+    {
+      "name": "Classical, stop at first full match",
+      "kind": "classical",
+      "success_rate": 1.0,
+      "queries_or_oracle_calls": 5402,
+      "wall_seconds": 0.044636569999966014,
+      "qubits": null,
+      "two_qubit_gates": null,
+      "depth": null,
+      "noisy_success": null,
+      "notes": "5402 trials here; N/2 = 8192 on average"
+    },
+    {
+      "name": "Grover, 12 rounds, M = 64 (submitted)",
+      "kind": "quantum",
+      "success_rate": 0.99975,
+      "queries_or_oracle_calls": 12,
+      "wall_seconds": 0.22,
+      "noisy_success": {
+        "cx_error": {
+          "1e-05": 0.97,
+          "0.0001": 0.9,
+          "0.001": 0.14
+        }
+      },
+      "notes": "success_rate = chance one shot is a passing key; checksum filter picks the key. Oracle runs in place with no scratch qubits; wall_seconds = solve() run alone, best of 3 (the first explore run printed 13.8 s while other jobs loaded the machine)",
+      "qubits": 16,
+      "two_qubit_gates": 2064,
+      "depth": 2826,
+      "total_gates": 6948
+    },
+    {
+      "name": "Grover, BBHT randomised rounds (M unknown)",
+      "kind": "quantum",
+      "success_rate": 1.0,
+      "queries_or_oracle_calls": 27,
+      "wall_seconds": null,
+      "qubits": 16,
+      "two_qubit_gates": null,
+      "depth": null,
+      "noisy_success": null,
+      "notes": "simulated with the exact success formula; average oracle uses to a passing key"
+    },
+    {
+      "name": "Grover, oracle: 1 byte, plain Toffoli",
+      "kind": "quantum",
+      "success_rate": 0.9996666666666667,
+      "queries_or_oracle_calls": 12,
+      "wall_seconds": null,
+      "noisy_success": null,
+      "notes": "oracle-construction comparison, M = 64",
+      "qubits": 16,
+      "two_qubit_gates": 2592,
+      "depth": 3570,
+      "total_gates": 8163
+    },
+    {
+      "name": "Grover, oracle: trust 2 bytes 'QC'",
+      "kind": "quantum",
+      "success_rate": 1.0,
+      "queries_or_oracle_calls": 71,
+      "wall_seconds": null,
+      "noisy_success": null,
+      "notes": "oracle-construction comparison, M = 2",
+      "qubits": 21,
+      "two_qubit_gates": 16472,
+      "depth": 17198,
+      "total_gates": 52815
+    }
+  ]
+}

@@ -1,0 +1,64 @@
+Reference from solution.py: k = 13383 = 11010001000111, phi = 0.81683349609375
+  QC-07: ask the night librarian for Folio 1870-Q, not 1870-R
+
+A. CLASSICAL brute force over keys (decrypt, look for 'QC-07: ')
+   tried 16384 keys in 0.17 s, found [13383]
+   14 bits is tiny. Each extra key bit doubles this: 2^40 is days, 2^128 is never.
+
+B. CLASSICAL brute force over angles against the matrix of U (not allowed
+   as a solution: it needs U and the eigenstate as plain numbers)
+   eigenvalue e^(2 pi i phi) = 0.407694-0.913119j, best of 16384 angles: k = 13383 (0.016 s)
+   matches the quantum answer: True
+
+C. Repeated measurement: Hadamard test with ONE use of U per shot
+   P(0) = (1 + cos 2 pi phi)/2 (X readout) and (1 + sin 2 pi phi)/2 (Y readout)
+    shots per readout  rms error (in 1/2^14 units)  exact k found
+                  100                       233.44             0%
+                1,000                        66.46             0%
+               10,000                        18.97             3%
+              100,000                         8.28             3%
+            1,000,000                         2.27            13%
+   error ~ 2245 / sqrt(shots). For rms error 0.2 grid steps (rounding right
+   ~99% of the time) we need about 1.3e+08 shots per readout.
+   Quantum phase estimation reaches the same precision with 14 rounds.
+
+D. Textbook phase estimation with t counting qubits + 1 eigenstate qubit
+     t  P(best t-bit value)  k read exactly  2q gates  depth
+     4                 0.99 no (only top 4 bits)        26     79
+     6                 0.78 no (only top 6 bits)        51    119
+     8                 0.96 no (only top 8 bits)        84    159
+    10                 0.53 no (only top 10 bits)       125    199
+    12                 0.80 no (only top 12 bits)       174    239
+    14                 1.00             yes       230    269
+   With t < 14 the angle is only known to t bits: the other bits stay unknown,
+   so the key (all 14 bits) is wrong. t = 14 gives it exactly in one shot.
+
+E. Iterative phase estimation: one reused control qubit, 2 qubits total
+   exact key with ONE shot per round: 20/20 runs
+   largest round: 2 qubits, 2 two-qubit gates, depth 17
+   14 rounds x 1 qubit measured; no inverse QFT, no 14-qubit register.
+
+F. Noise: depolarizing error p after every cx (p/10 on 1-qubit gates)
+      p(cx)   iterative: exact key   textbook t=14: P(exact key)
+      0e+00                   100%                        100.0%
+      1e-04                   100%                         97.3%
+      1e-03                   100%                         83.7%
+      1e-02                   100%                         17.0%
+      3e-02                   100%                          0.7%
+   The 14-qubit textbook circuit has ~100x the cx gates (230 against 2 per round), so it breaks far earlier.
+   The iterative version has only 2 cx per round and survives much more noise,
+   because every round needs just one correct majority vote.
+   (Error mitigation such as ZNE/PEC not run: it is not needed at these sizes.)
+
+Summary table (benchmark.json has the same numbers)
+   method                                               kind         ok qubits     2q  depth     secs
+   A. classical brute force over keys                   classical  1.00      0      0      0     0.17
+   B. classical angle scan vs matrix of U               classical  1.00      0      0      0     0.02
+   C. repeated Hadamard test (1 use of U per shot)      classical  0.20      2      2     17    25.30
+   D. textbook QPE, 14 counting qubits + inverse QFT    quantum    1.00     15    230    269     1.93
+   D. textbook QPE, t=4 (too few bits)                  quantum    0.00      5     26     79     0.08
+   D. textbook QPE, t=8 (too few bits)                  quantum    0.00      9     84    159     0.07
+   D. textbook QPE, t=12 (too few bits)                 quantum    0.00     13    174    239     0.08
+   E. iterative (semiclassical) QPE, 2 qubits [submitte quantum    1.00      2      2     17     0.18
+
+wrote /tmp/claude-1000/-home-avopti-Documents-QiskitFallFest2026/f8936f52-5d09-427f-a70d-e09d19ffd123/scratchpad/t07/repo/submissions/ourteam/tier07/benchmark.json

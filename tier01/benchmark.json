@@ -1,0 +1,80 @@
+{
+  "tier": 1,
+  "answer": "QC-01: Meet at the Oval when the clock reads 6:47",
+  "methods": [
+    {
+      "name": "A. classical, one bit per question",
+      "kind": "classical",
+      "success_rate": 1.0,
+      "queries_or_oracle_calls": 24,
+      "wall_seconds": 0.098,
+      "qubits": 25,
+      "two_qubit_gates": 312,
+      "depth": null,
+      "noisy_success": null,
+      "notes": "24 separate oracle calls, X gates only"
+    },
+    {
+      "name": "B. classical, random questions + elimination",
+      "kind": "classical",
+      "success_rate": 1.0,
+      "queries_or_oracle_calls": 25.7,
+      "wall_seconds": null,
+      "qubits": 25,
+      "two_qubit_gates": null,
+      "depth": null,
+      "noisy_success": null,
+      "notes": "average of 300 trials, needs >= 24"
+    },
+    {
+      "name": "C. classical brute force over all s",
+      "kind": "classical",
+      "success_rate": 1.0,
+      "queries_or_oracle_calls": 32,
+      "wall_seconds": 9.2,
+      "qubits": 0,
+      "two_qubit_gates": 0,
+      "depth": 0,
+      "noisy_success": null,
+      "notes": "2^24 candidates; wall time extrapolated from n=20 (0.58 s) x16, numpy"
+    },
+    {
+      "name": "D. Bernstein-Vazirani",
+      "kind": "quantum",
+      "success_rate": 1.0,
+      "queries_or_oracle_calls": 1,
+      "wall_seconds": 0.047,
+      "qubits": 25,
+      "two_qubit_gates": 13,
+      "depth": 17,
+      "noisy_success": {
+        "cx_error_0.0": 1.0,
+        "cx_error_0.001": 0.96,
+        "cx_error_0.005": 0.94,
+        "cx_error_0.01": 0.87,
+        "cx_error_0.02": 0.77,
+        "cx_error_0.05": 0.6,
+        "cx_error_0.1": 0.3
+      },
+      "notes": "our own gates: 1 X + 25 H + 24 H, no two-qubit gates; noisy_success = one-shot exact-match rate; see explore_output.txt for majority vote"
+    },
+    {
+      "name": "D2. Bernstein-Vazirani on the REAL oracle (solution.py)",
+      "kind": "quantum",
+      "success_rate": 1.0,
+      "queries_or_oracle_calls": 1,
+      "wall_seconds": null,
+      "qubits": 25,
+      "two_qubit_gates": 143,
+      "depth": 44,
+      "noisy_success": {
+        "cx_error_0.0": 1.0,
+        "cx_error_0.001": 0.86,
+        "cx_error_0.005": 0.5,
+        "cx_error_0.01": 0.28,
+        "cx_error_0.02": 0.12
+      },
+      "notes": "gate counts from check_submission.py; noisy_success = one-shot exact match over 50 runs (stabilizer sim, depolarizing CX noise, 159 CX in our basis); majority vote of 101 shots recovered s at every rate tested up to 0.02; all 16 shots agree, 100% success"
+    }
+  ]
+}

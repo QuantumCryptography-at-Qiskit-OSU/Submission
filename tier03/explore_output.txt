@@ -1,0 +1,55 @@
+A. Classical, one input per question (each question = one Aer run)
+   oracle                     answer     questions needed
+   constant 0                 constant   33
+   constant 1                 constant   33
+   balanced: f = x0           balanced   2
+   balanced: f = x1^x3^x5     balanced   3
+   balanced: random           balanced   2
+   balanced: sneaky           balanced   33
+   Worst case is 2^(n-1) + 1 = 33 questions: 32 equal answers can still
+   be the first half of a balanced function (the 'sneaky' oracle).
+
+B. Classical, random guessing: chance of being wrong (constant guessed
+   when the function is actually balanced)
+   k =  1 questions -> wrong 100.00%   (about 2^-(k-1) = 100.00%)
+   k =  2 questions -> wrong 49.40%   (about 2^-(k-1) = 50.00%)
+   k =  3 questions -> wrong 24.30%   (about 2^-(k-1) = 25.00%)
+   k =  5 questions -> wrong  5.24%   (about 2^-(k-1) = 6.25%)
+   k = 10 questions -> wrong  0.10%   (about 2^-(k-1) = 0.20%)
+   k = 20 questions -> wrong  0.00%   (about 2^-(k-1) = 0.00%)
+   Never exactly zero below 33 questions.
+
+C. Superposition but target left in |0> (no phase kickback)
+   P(000000) is the 'constant' signal; it should be 1 or 0
+   constant 0                 P(000000) = 1.00
+   constant 1                 P(000000) = 1.00
+   balanced: f = x0           P(000000) = 0.53
+   balanced: f = x1^x3^x5     P(000000) = 0.53
+   balanced: random           P(000000) = 0.53
+   balanced: sneaky           P(000000) = 0.53
+   Constant oracles look the same as before, but balanced ones give a
+   muddy mix: the answer sits in the target, which we never measured.
+
+D. Deutsch-Jozsa (target in |->): ONE question per oracle
+   constant 0                 P(000000) = 1.00 -> constant  (most common: 000000)
+   constant 1                 P(000000) = 1.00 -> constant  (most common: 000000)
+   balanced: f = x0           P(000000) = 0.00 -> balanced  (most common: 000001)
+   balanced: f = x1^x3^x5     P(000000) = 0.00 -> balanced  (most common: 101010)
+   balanced: random           P(000000) = 0.00 -> balanced  (most common: 000100)
+   balanced: sneaky           P(000000) = 0.00 -> balanced  (most common: 100000)
+   For f = s.x (a parity), DJ reads out s exactly: that is Bernstein-Vazirani
+   (f = x0 -> 000001, f = x1^x3^x5 -> 101010, bit 0 printed rightmost).
+
+E. Noise: Deutsch-Jozsa with random errors after every 2-qubit gate
+   (depolarizing, probability p). 'constant, with gates' is the random
+   balanced oracle applied twice (f XOR f = 0), so it has as many gates
+   as the balanced one but is constant.
+   (7680 CX gates in the constant one)
+   p = 0.0     constant: P(000000) = 1.00   balanced: P(000000) = 0.00
+   p = 0.0001  constant: P(000000) = 0.52   balanced: P(000000) = 0.01
+   p = 0.001   constant: P(000000) = 0.02   balanced: P(000000) = 0.02
+   p = 0.01    constant: P(000000) = 0.01   balanced: P(000000) = 0.01
+   Fully scrambled, P(000000) drops to 1/64 = 0.016 for both kinds.
+   At p = 0.0001 a threshold (P > 0.25 means constant) still works. At
+   p = 0.001, typical for today's hardware, the two kinds look the same:
+   ~7800-CX oracles are too deep without error correction.

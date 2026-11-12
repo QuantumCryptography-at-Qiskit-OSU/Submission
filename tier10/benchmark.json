@@ -1,0 +1,101 @@
+{
+  "tier": 10,
+  "answer": "QC-10: knock four times, shout O-H, and wait for the I-O",
+  "methods": [
+    {
+      "name": "classical brute force",
+      "kind": "classical",
+      "success_rate": 1.0,
+      "queries_or_oracle_calls": 15,
+      "wall_seconds": 6.466739996540128e-07,
+      "qubits": 0,
+      "two_qubit_gates": 0,
+      "depth": 15,
+      "noisy_success": null,
+      "notes": "deterministic, tiny group; comparison only"
+    },
+    {
+      "name": "classical lookup table",
+      "kind": "classical",
+      "success_rate": 1.0,
+      "queries_or_oracle_calls": 41,
+      "wall_seconds": 1.15784640001948e-05,
+      "qubits": 0,
+      "two_qubit_gates": 0,
+      "depth": 41,
+      "noisy_success": null,
+      "notes": "deterministic, tiny group; comparison only"
+    },
+    {
+      "name": "classical baby-step giant-step",
+      "kind": "classical",
+      "success_rate": 1.0,
+      "queries_or_oracle_calls": 10,
+      "wall_seconds": 1.6453479993288056e-06,
+      "qubits": 0,
+      "two_qubit_gates": 0,
+      "depth": 10,
+      "noisy_success": null,
+      "notes": "deterministic, tiny group; comparison only"
+    },
+    {
+      "name": "classical Pollard rho",
+      "kind": "classical",
+      "success_rate": 1.0,
+      "queries_or_oracle_calls": 12,
+      "wall_seconds": 2.7264730000752025e-05,
+      "qubits": 0,
+      "two_qubit_gates": 0,
+      "depth": 12,
+      "noisy_success": null,
+      "notes": "deterministic, tiny group; comparison only"
+    },
+    {
+      "name": "Shor dlog, recycled control (submitted)",
+      "kind": "quantum",
+      "success_rate": 1.0,
+      "queries_or_oracle_calls": 40,
+      "wall_seconds": 3.8680949211120605,
+      "two_qubit_gates": 13157,
+      "depth": 26139,
+      "total_gates": 37393,
+      "qubits": 10,
+      "noisy_success": {
+        "cx_error=0.0": 1.0,
+        "cx_error=0.0001": 0.9525,
+        "cx_error=0.001": 0.0
+      },
+      "notes": "t=7 phase bits for each of U_g, U_A; 40 shots; success = top vote reproduces A"
+    },
+    {
+      "name": "Shor dlog, textbook two registers",
+      "kind": "quantum",
+      "success_rate": null,
+      "queries_or_oracle_calls": 40,
+      "wall_seconds": null,
+      "two_qubit_gates": 13313,
+      "depth": 26178,
+      "total_gates": 37719,
+      "qubits": 23,
+      "noisy_success": null,
+      "notes": "14 counting qubits + inverse QFTs, same multipliers; circuit sized but not simulated by default (success_rate and wall_seconds null)"
+    },
+    {
+      "name": "Grover over exponents",
+      "kind": "quantum",
+      "success_rate": 0.9991823155419229,
+      "queries_or_oracle_calls": 4,
+      "wall_seconds": 437.758846282959,
+      "two_qubit_gates": 49698,
+      "depth": 97786,
+      "total_gates": 141306,
+      "qubits": 15,
+      "noisy_success": {
+        "cx_error=0.0": 0.9991823155419229,
+        "cx_error=0.0001": 0.03115804126835243,
+        "cx_error=0.001": 0.024390243902439025
+      },
+      "notes": "4 rounds, oracle = full modular exponentiation; success_rate = probability one shot gives x mod 41 = a; wall_seconds = noiseless probability sweep over 5 rounds; noisy_success is an analytic estimate, not simulated"
+    }
+  ]
+}

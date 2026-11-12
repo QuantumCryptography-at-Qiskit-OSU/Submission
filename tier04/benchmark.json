@@ -1,0 +1,94 @@
+{
+  "tier": 4,
+  "answer": "QC-04: Brutus will whistle Carmen Ohio slightly off-key",
+  "methods": [
+    {
+      "name": "Classical brute force (ask all 1024 inputs)",
+      "kind": "classical",
+      "success_rate": 1.0,
+      "queries_or_oracle_calls": 1024,
+      "wall_seconds": 8.038,
+      "qubits": 20,
+      "two_qubit_gates": 183,
+      "depth": 193,
+      "noisy_success": null,
+      "notes": "Comparison only. Deterministic; each query is one Aer run of the oracle."
+    },
+    {
+      "name": "Classical birthday search (random order)",
+      "kind": "classical",
+      "success_rate": 1.0,
+      "queries_or_oracle_calls": 40.1,
+      "wall_seconds": 0.765,
+      "qubits": 20,
+      "two_qubit_gates": 183,
+      "depth": 193,
+      "noisy_success": null,
+      "notes": "Comparison only. Mean queries over 3000 runs; worst seen 122; success within 32 queries: 39%."
+    },
+    {
+      "name": "Simon + GF(2) elimination (submitted)",
+      "kind": "quantum",
+      "success_rate": 1.0,
+      "queries_or_oracle_calls": 10.7,
+      "wall_seconds": 0.27,
+      "qubits": 20,
+      "two_qubit_gates": 183,
+      "depth": 195,
+      "noisy_success": {
+        "0.0": 1.0,
+        "0.0001": 0.0,
+        "0.001": 0.0,
+        "0.003": 0.0,
+        "0.01": 0.0,
+        "0.03": 0.0,
+        "0.1": 0.0
+      },
+      "notes": "Ideal: 100% with 40 runs; mean 10.7 runs to pin s. noisy_success = strict GF(2) solve at those cx error rates."
+    },
+    {
+      "name": "Simon + majority vote",
+      "kind": "quantum",
+      "success_rate": 1.0,
+      "queries_or_oracle_calls": 200,
+      "wall_seconds": 0.208,
+      "qubits": 20,
+      "two_qubit_gates": 183,
+      "depth": 195,
+      "noisy_success": {
+        "0.0": 1.0,
+        "0.0001": 1.0,
+        "0.001": 1.0,
+        "0.003": 1.0,
+        "0.01": 1.0,
+        "0.03": 1.0,
+        "0.1": 0.0
+      },
+      "notes": "Noise-robust decoder, 200 runs per attempt; noisy_success = vote decoder at those cx error rates."
+    },
+    {
+      "name": "Simon, output measured first",
+      "kind": "quantum",
+      "success_rate": 1.0,
+      "queries_or_oracle_calls": 60,
+      "wall_seconds": 0.498,
+      "qubits": 20,
+      "two_qubit_gates": 183,
+      "depth": 196,
+      "noisy_success": null,
+      "notes": "Equivalent to the submitted circuit; extra measurement of the output register."
+    },
+    {
+      "name": "Grover search for s (f(x) = f(0), two marked states)",
+      "kind": "quantum",
+      "success_rate": 1.0,
+      "queries_or_oracle_calls": 35,
+      "wall_seconds": 12.291,
+      "qubits": 20,
+      "two_qubit_gates": 7310,
+      "depth": 12095,
+      "noisy_success": null,
+      "notes": "P(s)=0.50, P(0)=0.50; any non-zero outcome is s. 17 rounds, about sqrt(N) oracle calls: quadratic, not exponential."
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+A. Classical, one question per bit (each question = one Aer run)
+   queries = 24, recovered s = 110010100110101100111010 (right), 0.10 s
+   Asking x = 2^j gives bit j directly. Always right, but n questions.
+
+B. Classical, random questions + solving the equations over GF(2)
+   average questions to pin down s: 25.7 (min 24, max 33)
+   Never fewer than 24 (each answer is one bit, s has 24 bits), and random ones
+   waste a few repeats. Unit vectors (A) are better.
+
+C. Classical brute force: try every s, keep the one that agrees with answers
+   (numpy, parity answers precomputed from our own oracle for a few x)
+   n = 12: tried     4096 strings, 1 survivor(s), right, 0.004 s
+   n = 16: tried    65536 strings, 1 survivor(s), right, 0.024 s
+   n = 20: tried  1048576 strings, 1 survivor(s), right, 0.575 s
+   Each +1 bit doubles the work: n = 24 would take about 9 s here,
+   n = 48 about 4.9 years. Question-wise brute force
+   still needs >= n answers to single out s, so it is never cheaper than A.
+
+D. Bernstein-Vazirani: ONE oracle call
+   100 shots -> 1 distinct outcome(s); most common 110010100110101100111010 (100/100); expected 110010100110101100111010
+   Our gates (without oracle): 50 single-qubit, 0 two-qubit
+   Oracle itself (our test one): {'two_qubit_gates': 13, 'depth': 13, 'total_gates': 13}
+
+E. Same circuit but target left in |0> (no phase kickback)
+   P(correct s) = 0.50; outcomes seen: ['000000000000000000000000', '110010100110101100111010']
+   |0> is an equal mix of |+> and |->. Only the |-> half gets the signs (-> s);
+   the |+> half gets none (-> all zeros). So it fails half the time.
+
+F. Noise: depolarizing error after every CX in the oracle
+   our test oracle: 13 CX. one shot = a single run; vote = majority bit-by-bit of 101 shots
+    CX error  one-shot exact  bit accuracy  vote exact
+       0.000            1.00         1.000           1
+       0.001            0.96         0.986           1
+       0.005            0.94         0.980           1
+       0.010            0.87         0.962           1
+       0.020            0.77         0.939           1
+       0.050            0.60         0.901           1
+       0.100            0.30         0.845           0
+   A depolarizing CX error flips a few output bits at random. The oracle has only
+   13 CX, so a majority vote over repeated runs recovers s up to quite large
+   errors. Majority vote is the cheap 'mitigation' here; the circuit is tiny, so we
+   skipped ZNE/PEC.
+
+G. Scaling with the number of bits n (our own oracles, random s)
+      n  classical queries  brute-force strings  BV queries  BV own gates  oracle CX
+      8                  8            2.560e+02           1            18          5
+     16                 16            6.554e+04           1            34         10
+     24                 24            1.678e+07           1            50         11
+     32                 32            4.295e+09           1            66         20
+     48                 48            2.815e+14           1            98         27
+     64                 64            1.845e+19           1           130         35
+   BV is right at every n tested. Classical question count grows with n,
+   BV stays at one; our own gates grow only linearly (3n + 2).
+   The gap is queries, not time: the oracle's own size (CX per 1 bit of s) is
+   the same either way, and a quantum simulator needs 2^n memory in general
+   (we only got n = 64 because this circuit is Clifford).

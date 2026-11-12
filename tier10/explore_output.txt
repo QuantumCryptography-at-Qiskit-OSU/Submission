@@ -1,0 +1,115 @@
+p = 83, g = 3 (order 41), A = 11, B = 49, key width 7 bits
+
+1. Classical discrete log (comparison only; steps = basic operations)
+   brute force          : a = 14 after  15 steps,     0.6 microseconds
+   lookup table         : a = 14 after  41 steps,    11.6 microseconds
+   baby-step giant-step : a = 14 after  10 steps,     1.6 microseconds
+   Pollard rho          : a = 14 after  12 steps,    27.3 microseconds
+   brute force worst case: 41 steps (group order 41).
+   All of these finish in microseconds here. BSGS and rho scale like sqrt(order),
+   brute force like order: the group is too small for quantum to win on time.
+
+2. Shor discrete log (main solution): 7 phase bits for U_g and again for U_A, one recycled control
+   multipliers g^(2^j): [3, 9, 81, 4, 16, 7, 49]
+   multipliers A^(2^j): [11, 38, 33, 10, 17, 40, 23]
+   40 shots in 13.7 s
+   (y_g, y_A)  shots   s = y_g*q/2^t   s*a = y_A*q/2^t   a = (s*a)/s mod q
+   (  0,  0)     2              0                 0   -
+   (  3, 43)     1              1                14   14
+   (  3, 44)     2              1                14   14
+   ( 15, 91)     1              5                29   14
+   ( 25, 77)     1              8                25   39
+   ( 25, 94)     2              8                30   14
+   ( 50, 57)     1             16                18   37
+   ( 55, 20)     1             18                 6   14
+   ( 56, 19)     1             18                 6   14
+   ( 65, 22)     1             21                 7   14
+   ( 66, 22)     1             21                 7   14
+   ( 68, 66)     1             22                21   14
+   ( 69, 65)     1             22                21   14
+   ( 69, 66)     1             22                21   14
+   ( 72,109)     1             23                35   14
+   ( 75, 25)     2             24                 8   14
+   ( 81, 72)     1             26                23   34
+   ( 81,112)     2             26                36   14
+   ( 84, 28)     2             27                 9   14
+   ( 87, 72)     1             28                23   14
+   ( 88, 72)     1             28                23   14
+   ( 93,116)     1             30                37   19
+   ( 94, 31)     1             30                10   14
+   ( 97, 75)     1             31                24   14
+   (100,119)     1             32                38   14
+   (103, 34)     1             33                11   14
+   (106, 78)     1             34                25   14
+   (109,123)     1             35                39   14
+   (112, 37)     1             36                12   14
+   (113, 38)     1             36                12   14
+   (116, 81)     1             37                26   14
+   (119,125)     1             38                40   14
+   (125, 84)     2             40                27   14
+   votes: {14: 34, 37: 1, 39: 1, 19: 1}  (s = 0 shots carry no information)
+
+2a. Success chance after k shots (1500 bootstrap draws from 300 real shots)
+   one shot gives the right vote 84.0% of the time
+      k=1     k=2     k=4     k=8     k=16    k=40
+    82.7%   86.1%   98.4%  100.0%  100.0%  100.0%
+   Wrong shots vote for scattered exponents, right shots vote for the same one,
+   so the top vote wins after a handful of shots, then one classical check g^a = A.
+
+2b. How many phase bits t? (success of ONE shot's vote, and of 16 shots)
+   t   shot ok   16 shots ok   (needs 2^t > 2 order = 82, so t >= 7)
+    4     7.5%        14.7%
+    5    39.5%        99.2%
+    6    74.5%       100.0%
+    7    85.5%       100.0%
+    8    86.5%       100.0%
+    9    94.0%       100.0%
+   t = 7 (2^t > 2q) is the size where rounding y*q/2^t is guaranteed to return s for the
+   closest peaks. Smaller t blurs s, but voting over many shots still works down to t = 5;
+   t = 4 is too coarse. Fewer phase bits means fewer rounds, so fewer gates.
+
+3. Shor discrete log, textbook version (two counting registers of 7 qubits at once, 23 qubits)
+   Built and measured, not simulated by default: 23 qubits means a 2^23-amplitude statevector
+   and ~37 000 gates (set TIER10_SIMULATE_TEXTBOOK=1 to run it, many minutes).
+   Same multipliers and same result as the recycled version: U_g and U_A commute, so the two
+   phase estimations give the same pair (s, s*a) whether run in parallel or one after the other.
+
+4. Grover search over exponents x = 0..63 (oracle computes g^x mod 83 and compares with A)
+   Marked items: x and x + 41 when both fit in 6 bits (g^x = A has 1 or 2 solutions in 0..63).
+   One noiseless simulation, probability recorded after every round (438 s).
+   Chance that a shot gives x with x mod 41 = a, against rounds (theory with 2 marked items):
+   rounds = 0:   3.1%   theory   3.1%
+   rounds = 1:  25.8%   theory  25.8%
+   rounds = 2:  60.2%   theory  60.2%
+   rounds = 3:  89.7%   theory  89.7%
+   rounds = 4:  99.9%   theory  99.9%
+   rounds = 5:  86.0%   theory  86.0%
+   Best at 4 rounds, about (pi/4) sqrt(64/2) = 4.4. More rounds overshoot.
+   Rounds needed at 6 qubits: 4. Brute force over 41 values needs up to 41 checks, so even at
+   this size Grover's oracle (full modular exponentiation, twice per round) costs more than
+   brute force itself: speed-up only shows once the search space is huge.
+
+5. Noise: depolarizing error probability p on every CX
+          p   Shor: right votes   Shor: 16 shots find a   Grover: estimate
+     0.0000           85.0%                100.0%           99.9%
+     0.0001           30.0%                 95.2%            3.1%
+     0.0010            0.0%                  0.0%            2.4%
+   Shor columns are simulated (13157 CX). The Grover column is an ESTIMATE, not a simulation:
+   a run with no CX error at all (probability (1 - p)^49698) succeeds as ideal, any error is
+   treated as a random guess (1/41). Simulating the noisy Grover circuit is too slow here.
+   Random guessing gets the right vote 1/41 = 2.4% of the time. Today's hardware is around
+   p = 0.001. Error mitigation (zero-noise extrapolation, error cancellation) cannot rescue
+   circuits this deep; error correction is needed.
+
+6. Rebuild the shared secret
+   a = 14 (check: 3^14 mod 83 = 11 = A)
+   secret = B^a mod p = 49^14 mod 83 = 23 = 0010111
+   QC-10: knock four times, shout O-H, and wait for the I-O   correct: True
+
+7. Circuit size, measured like the checker (basis rz/sx/x/cx, opt level 1)
+   method                                2Q gates   depth   gates  qubits
+   Shor dlog, recycled control (main)       13157   26139   37393      10
+   Shor dlog, textbook (2 registers)        13313   26178   37719      23
+   Grover over exponents (4 rounds)         49698   97786  141306      15
+
+   wrote benchmark.json, diagram_shor.png, diagram_grover.png

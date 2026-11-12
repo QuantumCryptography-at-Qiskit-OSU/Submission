@@ -1,0 +1,59 @@
+Tier 5: 10-bit key, 1024 keys, known prefix b'QC', oracle = 12 checks, 7 scratch qubits
+
+A. Classical brute force: try every key, no early stop (comparison only)
+   1024 trials, 10.1 ms, keys passing both bytes: 1 (key = 263)
+   Checking only byte 'Q' lets 4 keys through, so the oracle checks both bytes (README).
+
+B. Classical with early stop
+   numeric order: 264 trials (2.9 ms); random order averages 517 trials (about N/2 = 512)
+
+C. Grover: success probability against the number of rounds k (1 marked key)
+   theory: P(k) = sin^2((2k+1)*theta), theta = asin(sqrt(1/1024)); best k = 25
+     k   theory      Aer   2Q gates
+     0    0.001    0.001   0
+     1    0.009    0.011   190
+     2    0.024    0.032   380
+     5    0.114    0.125   950
+    10    0.372    0.382   1900
+    15    0.679    0.696   2850
+    20    0.919    0.934   3800
+    25    0.999    1.000   4750
+    30    0.891    0.904   5700
+    40    0.328    0.344   7600
+    50    0.000    0.000   9500
+   Too few rounds: the key is still hidden. Too many: the state rotates past the key
+   and the success drops again (k = 50 is worse than k = 25). Peak at k = 25.
+   time to solution, solve() end to end (build, compile, run, check; best of 3): 52.41 s
+
+D. Three oracle builds (same Grover, same result)
+   oracle build                     qubits  CX   depth  success
+   submitted (simplified, RCCX)         19  4750   4960   1.000
+   simplified, plain Toffoli            19  6250   6112   1.000
+   raw equations, RCCX                  21  6950   9531   1.000
+   Plain Toffolis (6 CX each) instead of relative-phase ones (3 CX) add about a third more CX
+   overall; the extra phases of the RCCX cancel because the oracle is W^-1 Z W. Skipping the
+   shared-Toffoli trick costs 2 more qubits, about 45% more CX and nearly double the depth.
+
+E. Number of marked keys unknown: BBHT (random rounds, grow the range by 6/5)
+   average oracle uses: 51 (fixed k = 25 is 26; classical N/2 = 512)
+   Costs about 2x the best fixed k but needs no knowledge of M. Here M = 1 is known, so we use fixed k.
+
+F. Noise: depolarizing error after each CX (40 noisy runs per setting, submitted circuit)
+   error 1e-05 per CX: key found in   98% of runs (87 s)
+   error 0.0001 per CX: key found in   70% of runs (90 s)
+   error 0.001 per CX: key found in    5% of runs (68 s)
+   Rule of thumb: the circuit survives while p x (number of CX) is well below 1. With 4750 CX
+   gates that means p below about 1/4750 = 2e-04. Today's devices (about 1e-3 per CX) need error correction.
+
+G. Scaling with the key size n (N = 2^n keys, one marked)
+      n    classical avg    Grover rounds   CX if rounds x 190/round
+     10              512             25.1   4.78e+03
+     14         8.19e+03              101   1.91e+04
+     20         5.24e+05              804   1.53e+05
+     32         2.15e+09         5.15e+04   9.78e+06
+     64         9.22e+18         3.37e+09   6.41e+11
+    128          1.7e+38         1.45e+19   2.75e+21
+   Grover is only a square-root speed-up: 128-bit keys still need ~2^64 rounds of a big oracle.
+   Doubling the key length is the standard defence.
+
+Note: the 'time to solution' line above was measured while other jobs loaded this machine. Run alone, solve() takes 2.46 s (best of 3); benchmark.json uses that figure.

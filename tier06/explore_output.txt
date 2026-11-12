@@ -1,0 +1,74 @@
+Tier 6: 14-bit key, 16384 keys, known prefix b'Q', checksum 221; oracle = 8 checks, 0 scratch qubits, M = 64 keys pass
+
+A. Classical brute force over all keys (comparison only)
+   full decrypt of every key: 16384 trials, 8.15 s
+   staged (check byte 0, then decrypt only the 64 that pass): 0.11 s
+   keys passing byte 0: 64; passing the checksum too: 1 (key = 5401)
+
+B. Classical with early stop (first key passing byte 0 and the checksum)
+   numeric order: 5402 trials (0.04 s); random order averages 8209 (about N/2 = 8192)
+
+C. Grover with M = 64 marked keys: P(measure a passing key) against rounds k
+   theory: sin^2((2k+1)*theta), theta = asin(sqrt(M/N)) = 0.0625; best k = 12
+     k   theory      Aer   2Q gates
+     0    0.004    0.003   0
+     1    0.035    0.042   172
+     2    0.095    0.101   344
+     4    0.285    0.294   688
+     6    0.528    0.537   1032
+     8    0.764    0.770   1376
+    10    0.935    0.938   1720
+    12    1.000    1.000   2064
+    14    0.942    0.947   2408
+    18    0.542    0.551   3096
+    24    0.006    0.006   4128
+    36    0.979    0.979   6192
+   Overshooting hurts: at 24 rounds the state has rotated past the marked keys (k = 24 is
+   about the same as k = 0 again). The 64 passing keys are equally likely, so one shot gives
+   a random passer; the checksum picks the right one (1 in 64 chance per shot, 4096 shots cover it).
+   submitted run: 65 distinct keys seen, 1 pass the checksum (right key)
+   time to solution, solve() end to end (best of 3): 13.83 s
+
+D. Guessing M wrong (rounds = floor(pi/4 * sqrt(N / guess)))
+    guessed M  rounds   theory      Aer
+            1     100    0.000    0.000
+            4      50    0.001    0.001
+           16      25    0.002    0.001
+           64      12    1.000    1.000
+          256       6    0.528    0.546
+         1024       3    0.180    0.186
+   Guessing M too small (1, 4, 16) runs far too many rounds and rotates past the target: success is
+   near the random baseline (0.4%). Guessing too large (256, 1024) stops short: about 53% and 18%.
+   Both directions lose, and Aer matches theory.
+
+E. M unknown
+   Estimate M from the curve: run k = (1, 2, 3, 4, 5, 6, 8), fit sin^2((2k+1) asin(sqrt(M/N))) -> M = 66 (true 64)
+   BBHT (random rounds, grow range by 6/5, no knowledge of M): 27 oracle uses on average to see a passing key (fixed k = 12 is 13)
+
+F. Oracle builds
+   oracle build                         qubits    CX   depth rounds  success
+   submitted (1 byte, RCCX, M = 64)         16   2064   2826     12   1.000   (M = 64)
+   1 byte, plain Toffoli                    16   2592   3570     12   1.000   (M = 64)
+   trust 2 bytes 'QC'                       21  16472  17198     71   1.000   (M = 2)
+   Trusting two bytes cuts M from 64 to 2, so the checksum filter has almost nothing to do, but the
+   search then needs about 6x the rounds (sqrt(64/2) = 5.7) and a bigger oracle per round, so about
+   8x the total CX. The one-byte build wins: a large M shrinks the rounds, and the checksum filter is cheap.
+
+G. Noise: depolarizing error after each CX (100 noisy runs per setting, submitted circuit)
+   error 1e-05 per CX:   97% of shots are passing keys (13 s)   (random guessing: 0.4%)
+   error 0.0001 per CX:   90% of shots are passing keys (11 s)   (random guessing: 0.4%)
+   error 0.001 per CX:   14% of shots are passing keys (16 s)   (random guessing: 0.4%)
+   2064 CX gates: the circuit survives while p x CX is well below 1, so p below about 5e-04.
+
+H. Scaling with the key size n (M = 2^(n-8) keys pass the 8-bit first-byte test)
+      n  classical avg  Grover rounds
+     14       8.19e+03           12.6
+     20       5.24e+05           12.6
+     32       2.15e+09           12.6
+     64       9.22e+18           12.6
+    128        1.7e+38           12.6
+   Here M grows with the key, so the rounds stay at about 12 for the first-byte test alone;
+   the real cost moves to the classical checksum filter over the M survivors (and to deciding
+   which of them is right). Trusting more known bytes gives M = 1 and the full sqrt(N) rounds.
+
+Note: the 'time to solution' line above was measured while other jobs loaded this machine. Run alone, solve() takes 0.22 s (best of 3); benchmark.json uses that figure.

@@ -1,0 +1,87 @@
+{
+  "tier": 5,
+  "answer": "QC-05: count the lamps on the Long Walk: there are nineteen",
+  "methods": [
+    {
+      "name": "Classical brute force, all keys",
+      "kind": "classical",
+      "success_rate": 1.0,
+      "queries_or_oracle_calls": 1024,
+      "wall_seconds": 0.010066888000437757,
+      "qubits": null,
+      "two_qubit_gates": null,
+      "depth": null,
+      "noisy_success": null,
+      "notes": "comparison only; every key tried"
+    },
+    {
+      "name": "Classical, stop at first hit",
+      "kind": "classical",
+      "success_rate": 1.0,
+      "queries_or_oracle_calls": 264,
+      "wall_seconds": 0.0029293669995240634,
+      "qubits": null,
+      "two_qubit_gates": null,
+      "depth": null,
+      "noisy_success": null,
+      "notes": "264 trials here; N/2 = 512 on average"
+    },
+    {
+      "name": "Grover, 25 rounds (submitted)",
+      "kind": "quantum",
+      "success_rate": 1.0,
+      "queries_or_oracle_calls": 25,
+      "wall_seconds": 2.46,
+      "noisy_success": {
+        "cx_error": {
+          "1e-05": 0.975,
+          "0.0001": 0.7,
+          "0.001": 0.05
+        }
+      },
+      "notes": "shared Toffolis, in-place equations, relative-phase Toffolis; wall_seconds = solve() run alone, best of 3 (the first explore run printed 52.4 s while other jobs loaded the machine)",
+      "qubits": 19,
+      "two_qubit_gates": 4750,
+      "depth": 4960,
+      "total_gates": 14588
+    },
+    {
+      "name": "Grover, oracle: simplified, plain Toffoli",
+      "kind": "quantum",
+      "success_rate": 1.0,
+      "queries_or_oracle_calls": 25,
+      "wall_seconds": null,
+      "noisy_success": null,
+      "notes": "oracle-construction comparison",
+      "qubits": 19,
+      "two_qubit_gates": 6250,
+      "depth": 6112,
+      "total_gates": 17543
+    },
+    {
+      "name": "Grover, oracle: raw equations, RCCX",
+      "kind": "quantum",
+      "success_rate": 1.0,
+      "queries_or_oracle_calls": 25,
+      "wall_seconds": null,
+      "noisy_success": null,
+      "notes": "oracle-construction comparison",
+      "qubits": 21,
+      "two_qubit_gates": 6950,
+      "depth": 9531,
+      "total_gates": 21039
+    },
+    {
+      "name": "Grover, BBHT randomised rounds",
+      "kind": "quantum",
+      "success_rate": 1.0,
+      "queries_or_oracle_calls": 51,
+      "wall_seconds": null,
+      "qubits": 19,
+      "two_qubit_gates": null,
+      "depth": null,
+      "noisy_success": null,
+      "notes": "simulated with the exact success formula; average oracle uses until a verified key"
+    }
+  ]
+}
