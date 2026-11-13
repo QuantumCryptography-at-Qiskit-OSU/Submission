@@ -2,7 +2,7 @@
 
 This is the same text as the notes under each slide in `Cryptographers.pptx`. It is written to be spoken aloud, in full sentences. Read it out loud a few times, then change any sentence that does not sound like you.
 
-Total: 1442 words. That is about 11.1 minutes at a calm 130 words per minute, and about 9.9 minutes at a normal 145.
+Total: 1526 words. That is about 11.7 minutes at a calm 130 words per minute, and about 10.5 minutes at a normal 145.
 
 If time runs short, slides 12 and 13 can each be cut to their first three sentences.
 
@@ -30,29 +30,41 @@ _101 words, about 47 seconds_
 
 Before the locks, here is the one idea you need. A normal computer tests one key at a time. A quantum computer can hold all the possible keys at the same moment. But there is a catch: when you measure, you get only one answer back. So the real skill is to build the circuit so that the wrong answers cancel each other, like waves in water, and the right answer grows stronger. Every algorithm tonight is a different way of doing that. And although there are ten locks, there are only six ideas, because some locks share the same trick.
 
-## Slide 5: Locks 1 and 3: one clever question replaces 24 questions
+## Slide 5: Locks 1 and 3: in the query model, one quantum question replaces many
 
-_109 words, about 50 seconds_
+_131 words, about 60 seconds_
 
-Lock one hides a secret code of twenty-four zeros and ones. A normal computer has to ask twenty-four questions, one for each digit. Our circuit asks only one question, but it asks it about every possible input at the same time. The lock answers by turning some plus signs into minus signs. Then the wrong answers cancel, and the whole code appears at once. We ran it sixteen times and got the same code sixteen times. Lock three uses the same trick. It has twenty-four small boxes, and one question per box tells us whether that box hides a zero or a one. A normal computer may need thirty-three.
+Locks one and three belong to the query model. The lock is a black box, and we count how many questions we must ask it. Lock one hides a code of twenty-four zeros and ones. A normal computer needs twenty-four questions, one for each digit. Our circuit asks one question about every input at once. The trick is called phase kickback: we put one extra qubit in a special state, and then the lock writes its answer as plus and minus signs. A second layer of H gates makes the wrong answers cancel, and the whole code appears. That is the Bernstein-Vazirani algorithm. Lock three uses its older relative, Deutsch-Jozsa. Each of twenty-four boxes is either constant or balanced, and one question tells us which. A normal computer may need thirty-three.
 
-**If a judge asks, "What is phase kickback?"** The lock writes its answer as a plus or minus sign on the input, instead of writing it onto a separate qubit. Signs can cancel each other, and the last step of the circuit uses exactly that.
+**If a judge asks, "What is phase kickback?"** The lock writes its answer as a plus or minus sign on the input, instead of writing it onto a separate qubit. This happens because the target qubit is in the state minus. Signs can cancel each other, and the last step of the circuit uses exactly that.
 
-## Slide 6: Lock 2: a spy cannot listen without leaving fingerprints
+**If a judge asks, "What does the formula say?"** It describes a layer of H gates. An input x becomes an equal mix of all outputs y, and each y carries a plus or minus sign that depends on x · y. When many inputs are mixed, these signs decide which outputs add up and which cancel.
 
-_115 words, about 53 seconds_
+**If a judge asks, "What do constant and balanced mean?"** A constant box gives the same answer for all 64 inputs. A balanced box gives 0 for exactly half of them and 1 for the other half. The challenge promises that every box is one of the two.
 
-Lock two is different, because here quantum physics protects a secret instead of breaking one. Alice sends us a key, one qubit at a time. She sends it over two lines, and a spy is listening on one of them. Here is the beautiful part: nobody can look at a qubit without disturbing it. So when the spy listens, she leaves fingerprints, and they show up as errors. We compared a small sample of our results with Alice. On line A we found zero errors. On line B, about one in five was wrong. So line B was tapped. We threw it away and built the key from line A. This method is called BB84.
+## Slide 6: Lock 2: BB84 key distribution, where a spy cannot listen without leaving errors
+
+_130 words, about 60 seconds_
+
+Lock two is different, because here quantum physics protects a secret instead of breaking one. The method is called BB84. Alice sends a key, one qubit at a time, and for every bit she picks one of two bases at random, Z or X. In this lock, we are Bob. We also pick a random basis for every qubit, and we measure. Afterwards Alice tells us her bases, and we keep only the bits where our choices matched. Eve, the spy, has to guess the basis too, and a wrong guess changes the qubit. That shows up as errors. On line A we found zero errors. On line B, about one in five test bits was wrong. So line B was tapped, and we built the key from line A.
 
 **If a judge asks, "Why 21% and not 25%?"** The theory says 25% on average. We tested only 125 bits, so the measured number moves a little by chance. We found 26 wrong out of 125, which is 21%.
 
-## Slide 7: Lock 4: every run gives one clue, and about ten clues reveal the secret
+**If a judge asks, "Where does 25% come from?"** Eve picks the wrong basis half of the time. When she does, our result is random, so it is wrong half of the time. Half of a half is a quarter.
 
-_97 words, about 45 seconds_
+**If a judge asks, "Why can Eve not simply copy the qubit?"** The no-cloning theorem says that an unknown quantum state cannot be copied. Eve has to measure it, and measuring in the wrong basis changes it.
 
-Lock four hides a secret pattern of ten zeros and ones. Every time we run our circuit, it hands us one clue about that pattern. Think of a detective. One clue is not enough, but each new clue rules out half of the remaining suspects. We ran the circuit forty times, and every clue agreed with all the others. Then ordinary algebra combined the clues into one answer. On average, about eleven runs are enough. A normal computer needs about forty tries, and that gap grows very quickly as the secret gets longer. This is Simon's algorithm.
+## Slide 7: Lock 4: the same circuit shape with a catch, because each run gives only a clue
+
+_125 words, about 58 seconds_
+
+Lock four looks like the same circuit, but with a catch. This is Simon's problem. The lock hides a secret pattern, s, of ten zeros and ones, and two inputs give the same output exactly when they differ by s. This time there is no phase kickback, so one run gives us only a clue. Think of a detective: each new clue rules out half of the remaining suspects. We ran the circuit forty times, and ordinary algebra combined the clues into one answer. About eleven runs are enough. A normal computer has to find two inputs with the same output, which takes about forty tries. That is the birthday paradox, and the chart shows how quickly the gap grows as the secret gets longer.
 
 **If a judge asks, "What does y · s = 0 mean?"** Write y above s. Look only at the positions where both have a 1, and count them. For every clue, that count is an even number.
+
+**If a judge asks, "What is the birthday paradox?"** In a room of only 23 people, two of them probably share a birthday. In the same way, two inputs with the same output turn up after roughly the square root of the number of inputs. For n digits that is about 1.25 × 2^(n/2) tries, which is 40 for 10 digits.
+
+**If a judge asks, "Why is there no phase kickback here?"** Phase kickback needs a target qubit in the state minus. Here the output qubits start at zero, so the lock stores f(x) as a value next to x. The cancelling happens between the two inputs that share that value, x and x ⊕ s.
 
 ## Slide 8: Locks 5 and 6: finding one key among 1,024 in 25 steps
 
@@ -104,12 +116,18 @@ And here is the reason nobody can break real encryption yet: noise. Every operat
 
 ## Slide 14: What difference does this make?
 
-_121 words, about 56 seconds_
+_111 words, about 51 seconds_
 
-So what difference does this make? First, we showed that these attacks really work from start to finish. Every key came out of a quantum circuit, and one came out of a real machine. Second, we showed that small circuits are what today's machines can actually run. Third, the warning is real. In 2019, experts estimated that breaking real RSA would need twenty million qubits. In 2025, that estimate dropped below one million. So the world is already moving to new encryption that is designed to resist quantum computers. To sum up: we opened all ten locks. The algorithms are ready. The machines are not ready yet, but they are coming. Thank you, and I am happy to take your questions.
+So what difference does this make? First, we showed that these attacks really work from start to finish. Every key came out of a quantum circuit, and one came out of a real machine. Second, we showed that small circuits are what today's machines can actually run. Third, the warning is real. In 2019, experts estimated that breaking real RSA would need twenty million qubits. In 2025, that estimate dropped below one million. So the world is already moving to new encryption that is designed to resist quantum computers. To sum up: we opened all ten locks. The algorithms are ready. The machines are not ready yet, but they are coming.
 
 **If a judge asks, "Where do the RSA numbers come from?"** Gidney and Ekerå, 2019: about 20 million noisy qubits for 8 hours. Gidney, 2025: under one million noisy qubits in under a week. The new quantum-safe standards are NIST FIPS 203, 204 and 205, published in August 2024.
 
+## Slide 15: Thank you
+
+_29 words, about 13 seconds_
+
+Thank you for listening. Our thanks also go to the Qiskit YouTube channel and IBM Quantum Learning, where we learned these algorithms. I am happy to take your questions.
+
 ## Backup slides
 
-Slide 15 is the table of circuit costs from the official checker. Slides 16 to 25 hold one page for each lock, with its circuit, its measured result and its numbers. Jump to them if a judge asks about one lock in detail.
+Slide 16 is the table of circuit costs from the official checker. Slides 17 to 26 hold one page for each lock, with its circuit, its measured result and its numbers. Jump to them if a judge asks about one lock in detail.

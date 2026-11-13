@@ -37,15 +37,21 @@ const TALK = [
     say: "Here is the result. We opened all ten locks. Each file gave us one line, and together the ten lines are secret directions around the Ohio State campus. The official checker confirmed that all ten lines are correct, and that every key really came from a quantum circuit. That gave us all forty points for solving the locks. We also ran one of our circuits on a real IBM quantum computer, and I will come back to that." },
   { title: "The one idea behind every lock: make the wrong answers cancel",
     say: "Before the locks, here is the one idea you need. A normal computer tests one key at a time. A quantum computer can hold all the possible keys at the same moment. But there is a catch: when you measure, you get only one answer back. So the real skill is to build the circuit so that the wrong answers cancel each other, like waves in water, and the right answer grows stronger. Every algorithm tonight is a different way of doing that. And although there are ten locks, there are only six ideas, because some locks share the same trick." },
-  { title: "Locks 1 and 3: one clever question replaces 24 questions",
-    say: "Lock one hides a secret code of twenty-four zeros and ones. A normal computer has to ask twenty-four questions, one for each digit. Our circuit asks only one question, but it asks it about every possible input at the same time. The lock answers by turning some plus signs into minus signs. Then the wrong answers cancel, and the whole code appears at once. We ran it sixteen times and got the same code sixteen times. Lock three uses the same trick. It has twenty-four small boxes, and one question per box tells us whether that box hides a zero or a one. A normal computer may need thirty-three.",
-    ask: [["What is phase kickback?", "The lock writes its answer as a plus or minus sign on the input, instead of writing it onto a separate qubit. Signs can cancel each other, and the last step of the circuit uses exactly that."]] },
-  { title: "Lock 2: a spy cannot listen without leaving fingerprints",
-    say: "Lock two is different, because here quantum physics protects a secret instead of breaking one. Alice sends us a key, one qubit at a time. She sends it over two lines, and a spy is listening on one of them. Here is the beautiful part: nobody can look at a qubit without disturbing it. So when the spy listens, she leaves fingerprints, and they show up as errors. We compared a small sample of our results with Alice. On line A we found zero errors. On line B, about one in five was wrong. So line B was tapped. We threw it away and built the key from line A. This method is called BB84.",
-    ask: [["Why 21% and not 25%?", "The theory says 25% on average. We tested only 125 bits, so the measured number moves a little by chance. We found 26 wrong out of 125, which is 21%."]] },
-  { title: "Lock 4: every run gives one clue, and about ten clues reveal the secret",
-    say: "Lock four hides a secret pattern of ten zeros and ones. Every time we run our circuit, it hands us one clue about that pattern. Think of a detective. One clue is not enough, but each new clue rules out half of the remaining suspects. We ran the circuit forty times, and every clue agreed with all the others. Then ordinary algebra combined the clues into one answer. On average, about eleven runs are enough. A normal computer needs about forty tries, and that gap grows very quickly as the secret gets longer. This is Simon's algorithm.",
-    ask: [["What does y · s = 0 mean?", "Write y above s. Look only at the positions where both have a 1, and count them. For every clue, that count is an even number."]] },
+  { title: "Locks 1 and 3: in the query model, one quantum question replaces many",
+    say: "Locks one and three belong to the query model. The lock is a black box, and we count how many questions we must ask it. Lock one hides a code of twenty-four zeros and ones. A normal computer needs twenty-four questions, one for each digit. Our circuit asks one question about every input at once. The trick is called phase kickback: we put one extra qubit in a special state, and then the lock writes its answer as plus and minus signs. A second layer of H gates makes the wrong answers cancel, and the whole code appears. That is the Bernstein-Vazirani algorithm. Lock three uses its older relative, Deutsch-Jozsa. Each of twenty-four boxes is either constant or balanced, and one question tells us which. A normal computer may need thirty-three.",
+    ask: [["What is phase kickback?", "The lock writes its answer as a plus or minus sign on the input, instead of writing it onto a separate qubit. This happens because the target qubit is in the state minus. Signs can cancel each other, and the last step of the circuit uses exactly that."],
+          ["What does the formula say?", "It describes a layer of H gates. An input x becomes an equal mix of all outputs y, and each y carries a plus or minus sign that depends on x · y. When many inputs are mixed, these signs decide which outputs add up and which cancel."],
+          ["What do constant and balanced mean?", "A constant box gives the same answer for all 64 inputs. A balanced box gives 0 for exactly half of them and 1 for the other half. The challenge promises that every box is one of the two."]] },
+  { title: "Lock 2: BB84 key distribution, where a spy cannot listen without leaving errors",
+    say: "Lock two is different, because here quantum physics protects a secret instead of breaking one. The method is called BB84. Alice sends a key, one qubit at a time, and for every bit she picks one of two bases at random, Z or X. In this lock, we are Bob. We also pick a random basis for every qubit, and we measure. Afterwards Alice tells us her bases, and we keep only the bits where our choices matched. Eve, the spy, has to guess the basis too, and a wrong guess changes the qubit. That shows up as errors. On line A we found zero errors. On line B, about one in five test bits was wrong. So line B was tapped, and we built the key from line A.",
+    ask: [["Why 21% and not 25%?", "The theory says 25% on average. We tested only 125 bits, so the measured number moves a little by chance. We found 26 wrong out of 125, which is 21%."],
+          ["Where does 25% come from?", "Eve picks the wrong basis half of the time. When she does, our result is random, so it is wrong half of the time. Half of a half is a quarter."],
+          ["Why can Eve not simply copy the qubit?", "The no-cloning theorem says that an unknown quantum state cannot be copied. Eve has to measure it, and measuring in the wrong basis changes it."]] },
+  { title: "Lock 4: the same circuit shape with a catch, because each run gives only a clue",
+    say: "Lock four looks like the same circuit, but with a catch. This is Simon's problem. The lock hides a secret pattern, s, of ten zeros and ones, and two inputs give the same output exactly when they differ by s. This time there is no phase kickback, so one run gives us only a clue. Think of a detective: each new clue rules out half of the remaining suspects. We ran the circuit forty times, and ordinary algebra combined the clues into one answer. About eleven runs are enough. A normal computer has to find two inputs with the same output, which takes about forty tries. That is the birthday paradox, and the chart shows how quickly the gap grows as the secret gets longer.",
+    ask: [["What does y · s = 0 mean?", "Write y above s. Look only at the positions where both have a 1, and count them. For every clue, that count is an even number."],
+          ["What is the birthday paradox?", "In a room of only 23 people, two of them probably share a birthday. In the same way, two inputs with the same output turn up after roughly the square root of the number of inputs. For n digits that is about 1.25 × 2^(n/2) tries, which is 40 for 10 digits."],
+          ["Why is there no phase kickback here?", "Phase kickback needs a target qubit in the state minus. Here the output qubits start at zero, so the lock stores f(x) as a value next to x. The cancelling happens between the two inputs that share that value, x and x ⊕ s."]] },
   { title: "Locks 5 and 6: finding one key among 1,024 in 25 steps",
     say: "Locks five and six are a search, like looking for a needle in a haystack. Lock five has about a thousand possible keys. A normal computer tries them one by one, so on average it needs about five hundred tries. Grover's algorithm needs twenty-five steps. Each step makes the right key a little more likely. In the plot, the line is the theory, and the dots are our results. After twenty-five steps we find the key every time. But if we keep going, the chance drops again, so we have to stop at the right moment. In lock six, sixty-four keys look correct at first. Grover finds all sixty-four, and then a quick check keeps the real one.",
     ask: [["Why do more steps make it worse?", "Each step turns the state by a fixed angle towards the right key. After 25 steps it points straight at the key. More steps turn it past the key."]] },
@@ -65,8 +71,10 @@ const TALK = [
     say: "And here is the reason nobody can break real encryption yet: noise. Every operation on a real quantum computer has a small chance of going wrong. We tested this in simulation with one error in every thousand operations, which is roughly where today's machines are. Lock seven, with two operations, always works. But lock five has almost five thousand operations, and it finds the key only five times in a hundred. Our circuit for seventy-seven has twenty-four thousand, so it would suffer about twenty-four errors in every run. Long circuits need error correction, and that is still being built.",
     ask: [["Did you use error mitigation?", "No. We measured how the plain circuits behave under noise, and we say so in the write-up."]] },
   { title: "What difference does this make?",
-    say: "So what difference does this make? First, we showed that these attacks really work from start to finish. Every key came out of a quantum circuit, and one came out of a real machine. Second, we showed that small circuits are what today's machines can actually run. Third, the warning is real. In 2019, experts estimated that breaking real RSA would need twenty million qubits. In 2025, that estimate dropped below one million. So the world is already moving to new encryption that is designed to resist quantum computers. To sum up: we opened all ten locks. The algorithms are ready. The machines are not ready yet, but they are coming. Thank you, and I am happy to take your questions.",
+    say: "So what difference does this make? First, we showed that these attacks really work from start to finish. Every key came out of a quantum circuit, and one came out of a real machine. Second, we showed that small circuits are what today's machines can actually run. Third, the warning is real. In 2019, experts estimated that breaking real RSA would need twenty million qubits. In 2025, that estimate dropped below one million. So the world is already moving to new encryption that is designed to resist quantum computers. To sum up: we opened all ten locks. The algorithms are ready. The machines are not ready yet, but they are coming.",
     ask: [["Where do the RSA numbers come from?", "Gidney and Ekerå, 2019: about 20 million noisy qubits for 8 hours. Gidney, 2025: under one million noisy qubits in under a week. The new quantum-safe standards are NIST FIPS 203, 204 and 205, published in August 2024."]] },
+  { title: "Thank you",
+    say: "Thank you for listening. Our thanks also go to the Qiskit YouTube channel and IBM Quantum Learning, where we learned these algorithms. I am happy to take your questions." },
 ];
 
 async function main() {
@@ -237,54 +245,103 @@ async function main() {
   // 5 Locks 1 and 3
   {
     const s = add();
-    steps(s, MX, 1.75, 4.9, [
-      ["Ask about every input at once", "One gate on each qubit, the H gate, puts all inputs into a single question."],
-      ["The lock answers with signs", "It turns some plus signs into minus signs. This is called phase kickback."],
-      ["The wrong answers cancel", "The same gates again, and only the secret code is left to measure."],
-    ], 1.25);
-    stat(s, MX, 5.45, 2.35, "24 → 1", "questions needed for lock 1", false, 1.35);
-    stat(s, MX + 2.55, 5.45, 2.35, "33 → 1", "questions per box in lock 3", true, 1.35);
-    await img(s, SUB + "/tier01/diagram_bernstein_vazirani.png", 5.9, 1.55, 6.83, 2.75, "Circuit for lock 1: an H gate on every qubit, the lock, H gates again, then measure");
-    panel(s, 5.9, 4.45, 6.83, 1.05);
-    text(s, [{ text: "Lock 1: 16 runs, and the same code every time", options: { bold: true, breakLine: true } }, { text: "110001111100110101001001", options: { fontFace: "Courier New", bold: true, color: C.accent1, fontSize: 18 } }], { x: 6.1, y: 4.5, w: 6.43, h: 0.95, fontSize: 15, valign: "middle" });
-    panel(s, 5.9, 5.65, 6.83, 1.15, C.accent5);
-    text(s, [{ text: "Lock 3: the same trick, 24 times. ", options: { bold: true } }, { text: "Each of the 24 boxes either always gives the same answer, or gives 0 for half of its inputs and 1 for the other half. One question tells us which, and that is one digit of the key." }], { x: 6.1, y: 5.7, w: 6.43, h: 1.05, fontSize: 14, valign: "middle" });
+    steps(s, MX, 1.7, 5.5, [
+      ["The query model: count the questions", "The lock is a black box. We can only ask it questions, and the cost is the number of questions."],
+      ["Phase kickback: the answer becomes a sign", "We put the target qubit in the state |−⟩. Then the lock marks every input with a plus or a minus sign."],
+      ["Interference: the wrong answers cancel", "A second layer of H gates turns the signs into digits that we can measure."],
+    ], 1.14);
+    panel(s, MX, 5.2, 5.5, 1.6);
+    await img(s, FIG + "formula_hadamard.png", MX + 0.2, 5.27, 5.1, 0.72, "Formula: H gates turn an input x into an equal mix of all y, each with the sign minus one to the power x dot y");
+    text(s, "This is the rule for a layer of H gates. Its plus and minus signs decide which answers add up and which cancel.", { x: MX + 0.2, y: 6.03, w: 5.1, h: 0.5, fontSize: 13, valign: "middle" });
+    text(s, "Formula as taught by IBM Quantum Learning on the Qiskit YouTube channel.", { x: MX + 0.2, y: 6.52, w: 5.1, h: 0.25, fontSize: 11, color: C.accent6, valign: "middle" });
+    await img(s, SUB + "/tier01/diagram_bernstein_vazirani.png", 6.5, 1.5, 6.23, 2.1, "Circuit for lock 1, drawn with 4 inputs: H gates, the lock, H gates again, then measure. The target qubit gets X and H.");
+    s.addChart(pres.charts.BAR, [
+      { name: "Normal computer", labels: ["Lock 1", "Lock 3, per box"], values: [24, 33] },
+      { name: "Our circuit", labels: ["Lock 1", "Lock 3, per box"], values: [1, 1] },
+    ], Object.assign(chartLook("Questions needed"), { x: 6.5, y: 3.7, w: 2.85, h: 3.1, chartColors: [PINK, BLUE], showLegend: true, legendPos: "b", legendFontSize: 12, legendColor: NAVY, legendFontFace: "+mn-lt", dataLabelFormatCode: "0", valAxisMaxVal: 40, barGapWidthPct: 60, objectName: "Question chart" }));
+    panel(s, 9.5, 3.7, 3.23, 1.5);
+    text(s, [{ text: "Lock 1: Bernstein-Vazirani", options: { bold: true, fontSize: 15, breakLine: true } }, { text: "The lock hides a 24-digit code. One question returned the whole code, in 16 runs out of 16." }], { x: 9.65, y: 3.75, w: 2.93, h: 1.4, fontSize: 13, valign: "middle" });
+    panel(s, 9.5, 5.3, 3.23, 1.5, C.accent5);
+    text(s, [{ text: "Lock 3: Deutsch-Jozsa", options: { bold: true, fontSize: 15, breakLine: true } }, { text: "Each of 24 boxes is constant or balanced. A constant box always measures 000000, and a balanced box never does." }], { x: 9.65, y: 5.35, w: 2.93, h: 1.4, fontSize: 13, valign: "middle" });
   }
 
   // 6 Lock 2
   {
     const s = add();
-    steps(s, MX, 1.75, 6.6, [
-      ["Alice sends the key one qubit at a time", "A qubit is the quantum version of a bit. She uses two lines, and a spy listens on one of them."],
-      ["Looking at a qubit disturbs it", "The spy has to guess how to look at each qubit. A wrong guess changes it."],
-      ["We compare a small sample with Alice", "A clean line shows no errors. A tapped line shows many."],
-    ], 1.2);
-    panel(s, MX, 5.45, 6.6, 1.35);
-    text(s, [{ text: "The result. ", options: { bold: true } }, { text: "Line B was tapped, so we threw it away and built the key from line A. This method is called BB84, after its inventors Bennett and Brassard and the year 1984." }], { x: MX + 0.2, y: 5.5, w: 6.2, h: 1.25, fontSize: 15, valign: "middle" });
-    s.addChart(pres.charts.BAR, [{ name: "Wrong test bits", labels: ["Line A (clean)", "Line B (spy)"], values: [0, 20.8] }],
-      Object.assign(chartLook("Test bits that came out wrong (%)"), { x: 7.6, y: 1.55, w: 5.13, h: 3.7, dataLabelFormatCode: "0.0", catAxisLabelFontSize: 14, valAxisMaxVal: 30, objectName: "Error chart" }));
-    stat(s, 7.6, 5.45, 2.47, "0 of 143", "test bits wrong on line A", false, 1.35);
-    stat(s, 10.26, 5.45, 2.47, "26 of 125", "test bits wrong on line B", true, 1.35);
+    // how a bit becomes a qubit
+    text(s, "How Alice turns a bit into a qubit", { x: MX, y: 1.5, w: 3.3, h: 0.35, fontSize: 15, bold: true });
+    table(s, MX, 1.92, 3.3, [1.1, 1.1, 1.1], ["Basis", "Bit 0", "Bit 1"], [
+      [{ text: "Z", options: { bold: true, color: C.accent1 } }, "|0⟩", "|1⟩"],
+      [{ text: "X", options: { bold: true, color: C.accent1 } }, "|+⟩", "|−⟩"],
+    ], { rowH: 0.42, fontSize: 15 });
+    text(s, "Table and example after the Qiskit YouTube channel and IBM Quantum Learning, “Quantum key distribution”.", { x: MX, y: 3.25, w: 3.3, h: 0.45, fontSize: 11, color: C.accent6 });
+
+    // Alice -> Eve -> Bob
+    const person = (x, y, col) => {
+      s.addShape(pres.ShapeType.ellipse, { x: x + 0.22, y, w: 0.46, h: 0.46, fill: { color: col }, line: { color: col, width: 0 }, objectName: nm("Head") });
+      s.addShape(pres.ShapeType.round2SameRect, { x, y: y + 0.52, w: 0.9, h: 0.55, fill: { color: col }, line: { color: col, width: 0 }, objectName: nm("Body") });
+    };
+    const tokens = (x, y, list, size) => list.forEach((t, i) =>
+      text(s, t[0], { x: x + i * 0.52, y, w: 0.5, h: 0.36, fontSize: size || 16, bold: true, fontFace: "Courier New", align: "center", valign: "middle", color: t[1] ? C.accent2 : C.text1 }));
+    const arrow = (x, w) => s.addShape(pres.ShapeType.rightArrow, { x, y: 2.72, w, h: 0.3, fill: { color: C.accent3 }, line: { color: C.accent3, width: 0 }, objectName: nm("Arrow") });
+    person(4.35, 1.75, C.accent1);
+    text(s, "Alice", { x: 4.05, y: 2.9, w: 1.5, h: 0.32, fontSize: 15, bold: true, align: "center", color: C.accent1 });
+    text(s, "She sends the key.", { x: 4.05, y: 3.2, w: 1.5, h: 0.5, fontSize: 12, align: "center" });
+    text(s, "Alice's bases and qubits", { x: 5.55, y: 1.5, w: 2.1, h: 0.3, fontSize: 12, align: "center" });
+    tokens(5.57, 1.82, [["X"], ["Z"], ["X"], ["Z"]]);
+    tokens(5.57, 2.22, [["|+⟩"], ["|0⟩"], ["|−⟩"], ["|1⟩"]], 15);
+    arrow(5.55, 2.1);
+    person(7.95, 1.75, C.accent2);
+    text(s, "Eve, the spy", { x: 7.65, y: 2.9, w: 1.5, h: 0.32, fontSize: 15, bold: true, align: "center", color: C.accent2 });
+    text(s, "She measures and resends.", { x: 7.65, y: 3.2, w: 1.5, h: 0.5, fontSize: 12, align: "center" });
+    text(s, "Eve's guesses and her qubits", { x: 8.95, y: 1.5, w: 2.5, h: 0.3, fontSize: 12, align: "center" });
+    tokens(9.17, 1.82, [["Z", 1], ["Z"], ["X"], ["X", 1]]);
+    tokens(9.17, 2.22, [["|1⟩", 1], ["|0⟩"], ["|−⟩"], ["|+⟩", 1]], 15);
+    arrow(9.15, 2.1);
+    text(s, "A wrong guess changes the qubit.", { x: 8.95, y: 3.08, w: 2.5, h: 0.3, fontSize: 12, bold: true, align: "center", color: C.accent2 });
+    await img(s, FIG + "bob.png", 11.45, 1.5, 1.28, 1.4, "Bob the Builder, a cartoon builder with a yellow helmet");
+    text(s, "Bob", { x: 11.34, y: 2.9, w: 1.5, h: 0.32, fontSize: 15, bold: true, align: "center", color: C.accent1 });
+    text(s, "In this lock, we are Bob.", { x: 11.34, y: 3.2, w: 1.5, h: 0.5, fontSize: 12, align: "center" });
+
+    steps(s, MX, 4.02, 6.5, [
+      ["We pick a basis for every qubit, without knowing hers", "Z: we measure directly. X: we apply one H gate first, and then we measure."],
+      ["We keep only the bits where the bases matched", "Alice announces her bases afterwards. With the same basis, our bit must equal hers."],
+      ["We compare a public sample to catch the spy", "Eve guesses wrong half of the time, and half of those bits flip. That is about 25% errors."],
+    ], 0.95);
+    s.addChart(pres.charts.BAR, [{ name: "Wrong test bits", labels: ["Line A", "Line B"], values: [0, 20.8] }],
+      Object.assign(chartLook("Test bits that came out wrong (%)"), { x: 7.35, y: 3.9, w: 2.75, h: 2.9, titleFontSize: 13, dataLabelFormatCode: "0.0", catAxisLabelFontSize: 13, valAxisMaxVal: 30, objectName: "Error chart" }));
+    stat(s, 10.26, 3.95, 2.47, "0 of 143", "wrong on line A, so we built the key from it", false, 1.38);
+    stat(s, 10.26, 5.42, 2.47, "26 of 125", "wrong on line B, so Eve was listening there", true, 1.38);
   }
 
   // 7 Lock 4
   {
     const s = add();
-    steps(s, MX, 1.75, 4.6, [
-      ["The lock hides a 10-digit pattern", "Two different inputs always give the same output. The secret s is the difference between them."],
-      ["Every run returns one clue", "A clue is a string y that fits the secret in a fixed way: y · s = 0."],
-      ["Solve the clues together", "Each new clue halves the possibilities. Ordinary algebra finds the one that is left."],
-    ], 1.65);
-    panel(s, 5.5, 1.6, 3.6, 5.2);
-    text(s, "Six of our 37 clues", { x: 5.75, y: 1.75, w: 3.1, h: 0.4, fontSize: 15, bold: true });
+    panel(s, MX, 1.55, 5.3, 1.75);
+    text(s, [
+      { text: "Simon's problem", options: { bold: true, fontSize: 16, breakLine: true } },
+      { text: "Input: ", options: { bold: true } }, { text: "a function f on 10-digit strings, hidden in the lock.", options: { breakLine: true } },
+      { text: "Promise: ", options: { bold: true } }, { text: "f(x) = f(y) exactly when y = x or y = x ⊕ s.", options: { breakLine: true } },
+      { text: "Output: ", options: { bold: true } }, { text: "the secret string s." },
+    ], { x: MX + 0.2, y: 1.6, w: 4.9, h: 1.65, fontSize: 14, valign: "middle" });
+    text(s, "Problem statement as taught by IBM Quantum Learning on the Qiskit YouTube channel.", { x: MX, y: 3.33, w: 5.3, h: 0.28, fontSize: 11, color: C.accent6, valign: "middle" });
+    steps(s, MX, 3.78, 5.3, [
+      ["The catch: there is no phase kickback", "The lock writes f(x) into 10 extra qubits, not into a sign. One run cannot show s."],
+      ["Each run measures one clue y", "The inputs x and x ⊕ s interfere, so every clue fits the rule y · s = 0."],
+      ["Ordinary algebra finishes the job", "Each clue halves the possibilities. About 10 clues leave only s."],
+    ], 1.03);
+    panel(s, 6.2, 1.55, 2.75, 5.25);
+    text(s, "Six of our 37 clues y", { x: 6.4, y: 1.7, w: 2.35, h: 0.4, fontSize: 15, bold: true });
     ["0011000101", "0100110001", "0101110110", "0001011011", "1101000111", "0001100101"].forEach((y, i) =>
-      text(s, y, { x: 5.75, y: 2.2 + i * 0.42, w: 3.1, h: 0.4, fontSize: 18, fontFace: "Courier New", valign: "middle" }));
-    text(s, "Every clue fits one secret:", { x: 5.75, y: 4.85, w: 3.1, h: 0.4, fontSize: 15 });
-    text(s, "s = 1100011000", { x: 5.75, y: 5.3, w: 3.1, h: 0.5, fontSize: 20, bold: true, color: C.accent2, fontFace: "Courier New", valign: "middle" });
-    text(s, "It is the only pattern that fits them all.", { x: 5.75, y: 5.85, w: 3.1, h: 0.8, fontSize: 14 });
-    stat(s, 9.4, 1.6, 3.33, "about 40", "tries for a normal computer", true, 1.6);
-    stat(s, 9.4, 3.4, 3.33, "about 11", "runs of our circuit, on average", false, 1.6);
-    stat(s, 9.4, 5.2, 3.33, "40 of 40", "runs gave a clue that fits the secret", false, 1.6);
+      text(s, y, { x: 6.4, y: 2.15 + i * 0.42, w: 2.35, h: 0.4, fontSize: 17, fontFace: "Courier New", valign: "middle" }));
+    text(s, "Only one secret fits all of them:", { x: 6.4, y: 4.8, w: 2.35, h: 0.55, fontSize: 14 });
+    text(s, "s = 1100011000", { x: 6.4, y: 5.4, w: 2.35, h: 0.45, fontSize: 17, bold: true, color: C.accent2, fontFace: "Courier New", valign: "middle" });
+    text(s, "All 40 runs gave a clue that fits it.", { x: 6.4, y: 5.95, w: 2.35, h: 0.7, fontSize: 14 });
+    s.addChart(pres.charts.LINE, [
+      { name: "Normal computer", labels: ["10", "14", "18", "22"], values: [40, 160, 642, 2567] },
+      { name: "Our circuit", labels: ["10", "14", "18", "22"], values: [11, 15, 19, 23] },
+    ], Object.assign(chartLook("Tries needed as the secret gets longer"), { x: 9.2, y: 1.5, w: 3.53, h: 3.55, chartColors: [PINK, BLUE], showValue: false, showLegend: true, legendPos: "b", legendFontSize: 12, legendColor: NAVY, legendFontFace: "+mn-lt", lineSize: 3, lineDataSymbolSize: 8, showCatAxisTitle: true, catAxisTitle: "Digits in the secret", catAxisTitleFontSize: 12, catAxisTitleColor: NAVY, valAxisLabelFormatCode: "#,##0", objectName: "Simon chart" }));
+    stat(s, 9.2, 5.2, 3.53, "40 → 11", "tries for a normal computer (the birthday paradox) against runs of our circuit", true, 1.6);
   }
 
   // 8 Locks 5 and 6
@@ -405,6 +462,32 @@ async function main() {
     text(s, "All ten locks are open. The algorithms are ready. The machines are not ready yet, but they are coming.", { x: MX + 0.3, y: 5.65, w: W - 2 * MX - 0.6, h: 1.15, fontSize: 20, bold: true, color: C.background1, valign: "middle" });
   }
 
+  // 15 Thank you
+  {
+    const s = add("TITLE");
+    s.addText([
+      { text: "We are happy to take your questions.", options: { breakLine: true } },
+      { text: " ", options: { fontSize: 12, breakLine: true } },
+      { text: "Team Cryptographers", options: { bold: true, color: C.accent4, breakLine: true } },
+      { text: "Avaneesh  ·  Logan  ·  Zach  ·  Bryce" },
+    ], { placeholder: "body" });
+    text(s, "Qiskit Fall Fest 2026 at The Ohio State University  ·  Challenge 2: Quantum Cryptography", { x: MX, y: 6.55, w: 6.9, h: 0.6, fontSize: 14, color: C.accent3 });
+    const cx = 8.6, cw = W - cx - MX;
+    text(s, "Credits", { x: cx, y: 1.5, w: cw, h: 0.5, fontSize: 24, bold: true, color: C.accent1, fontFace: THEME.headFontFace });
+    const credits = [
+      ["Qiskit YouTube channel and IBM Quantum Learning. ", "We learned these algorithms from their lessons. The BB84 table and example, the H-gate formula and the statement of Simon's problem follow them."],
+      ["IBM Quantum. ", "Lock 7 ran on the ibm_kingston quantum computer."],
+      ["Qiskit Fall Fest organisers at Ohio State. ", "They built the challenge and its checker."],
+      ["Bob the Builder ", "is a character owned by Mattel. The picture is used only as a friendly illustration."],
+    ];
+    const ch = [1.55, 0.8, 0.8, 0.95];
+    let cy = 2.15;
+    credits.forEach((c, i) => {
+      text(s, [{ text: c[0], options: { bold: true } }, { text: c[1] }], { x: cx, y: cy, w: cw, h: ch[i], fontSize: 15 });
+      cy += ch[i] + 0.12;
+    });
+  }
+
   // ================= BACKUP =================
   pres.addSection({ title: "Backup" });
   const addBackup = (title) => { const s = pres.addSlide({ masterName: "BACKUP", sectionTitle: "Backup" }); s.addText(title, { placeholder: "title" }); return s; };
@@ -483,7 +566,7 @@ async function main() {
     md += `\n## Slide ${i + 1}: ${t.title}\n\n_${w} words, about ${Math.round(w / 130 * 60)} seconds_\n\n${t.say}\n`;
     for (const [q, a] of t.ask || []) md += `\n**If a judge asks, "${q}"** ${a}\n`;
   });
-  md += "\n## Backup slides\n\nSlide 15 is the table of circuit costs from the official checker. Slides 16 to 25 hold one page for each lock, with its circuit, its measured result and its numbers. Jump to them if a judge asks about one lock in detail.\n";
+  md += "\n## Backup slides\n\nSlide 16 is the table of circuit costs from the official checker. Slides 17 to 26 hold one page for each lock, with its circuit, its measured result and its numbers. Jump to them if a judge asks about one lock in detail.\n";
   fs.writeFileSync(NOTES_OUT, md);
   console.log("wrote", NOTES_OUT, total, "words");
 }
