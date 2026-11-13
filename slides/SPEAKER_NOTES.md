@@ -1,83 +1,115 @@
 # Speaker notes: Cryptographers, 10 minutes
 
-Same text as the notes under each slide in `Cryptographers.pptx`. Rewrite it in your own words before rehearsing.
+This is the same text as the notes under each slide in `Cryptographers.pptx`. It is written to be spoken aloud, in full sentences. Read it out loud a few times, then change any sentence that does not sound like you.
 
-Total: 1294 words, about 10.0 minutes at 130 words per minute.
+Total: 1442 words. That is about 11.1 minutes at a calm 130 words per minute, and about 9.9 minutes at a normal 145.
+
+If time runs short, slides 12 and 13 can each be cut to their first three sentences.
 
 ## Slide 1: Ten locks, one message
 
-_60 words, about 28 seconds_
-
-Good evening. We are team Cryptographers. Ten files were locked. Each lock opens with a different quantum algorithm. In the next ten minutes I will show you how we opened all ten, what each circuit costs, and what happens at real key sizes. The model on the right is a quantum computer I built in 3D for my own website.
-
-## Slide 2: We opened all ten locks, and each one ran a quantum circuit
-
-_51 words, about 24 seconds_
-
-Here is the message. Ten lines, one from each file. Every line matches the official hash, and every tier ran a quantum circuit inside solve. That is all forty tier points in the checker. We also ran one tier on a real IBM quantum computer. I will come back to that.
-
-## Slide 3: Six ideas open ten locks: what each scored circuit costs
-
 _61 words, about 28 seconds_
 
-This table is every tier on one slide. The numbers come from the official checker. Ten tiers, but only six ideas. Tiers one and three are the same trick. Five and six are both Grover. Eight, nine and ten are all Shor. So I will explain six ideas. Look at tier seven: two qubits and two two-qubit gates. Remember that one.
+Good evening, everyone. We are team Cryptographers: Logan, Zach, Bryce, and me, Avaneesh. Our challenge was called Ten Locks, One Message. We were given ten locked files, and our job was to open every one of them with a quantum computer. In the next ten minutes, I will show you what we did, how we did it, and why it matters.
 
-## Slide 4: Tiers 1 and 3: one question answers what classical needs 24 or 33 for
+## Slide 2: The challenge: ten locked files, and a quantum circuit must find each key
 
-_119 words, about 55 seconds_
+_82 words, about 38 seconds_
 
-Tiers one and three use the same trick. First, we put the target qubit in the minus state. Now the oracle does not flip a bit. It puts a plus or minus sign on the input. That is phase kickback. Second, Hadamard gates put all inputs into one question. One oracle call signs all of them. Third, Hadamards again, and the signs add up or cancel. In tier one the hidden twenty-four bit string appears directly. All sixteen shots agree. In tier three, a constant function always gives all zeros, and a balanced function never does. You see both cases in the histograms. Classically, tier one needs twenty-four questions and tier three needs up to thirty-three. We need one.
+Let me start with the problem. Each file was scrambled with encryption, so it looked like random nonsense. To unscramble a file, you need its key, and the key is just a secret number. The challenge was to build a quantum circuit that finds that number for us. Once we have the key, an ordinary computer unscrambles the file, and a readable sentence appears. Each lock was designed for a different quantum algorithm, and the locks get harder from one to ten.
 
-## Slide 5: Tier 2: the eavesdropper leaves 21% errors, the clean link leaves none
+## Slide 3: We opened all ten locks, and together they spell one message
 
-_107 words, about 49 seconds_
+_78 words, about 36 seconds_
 
-Tier two is BB84. Alice sends qubits in four possible states. You see them on the Bloch spheres. We measure each qubit in a random basis. Later Alice tells us her bases, and we keep only the matching ones. Now the important part. Eve measured one link. She had to guess the basis. Half the time she guessed wrong, and then half of our results flip. So we expect twenty-five percent errors. We measured zero on link A and twenty-one percent on link B. So link B is tapped. We build the key from link A. The security comes from physics. Measuring an unknown qubit changes it.
+Here is the result. We opened all ten locks. Each file gave us one line, and together the ten lines are secret directions around the Ohio State campus. The official checker confirmed that all ten lines are correct, and that every key really came from a quantum circuit. That gave us all forty points for solving the locks. We also ran one of our circuits on a real IBM quantum computer, and I will come back to that.
 
-## Slide 6: Tier 4: every run returns one equation about the secret
+## Slide 4: The one idea behind every lock: make the wrong answers cancel
 
-_96 words, about 44 seconds_
+_101 words, about 47 seconds_
 
-Tier four is Simon's algorithm. The function repeats with a hidden shift s. We want s. Each run of the circuit gives a random string y. But not fully random. Every y satisfies y dot s equals zero. So each run is one equation about the secret. We took forty shots and got thirty-seven different strings. All of them satisfy the equation. Then ordinary linear algebra gives one answer for s. On average eleven runs are enough. A classical search needs about forty queries to find a collision, and this gap grows exponentially with the size.
+Before the locks, here is the one idea you need. A normal computer tests one key at a time. A quantum computer can hold all the possible keys at the same moment. But there is a catch: when you measure, you get only one answer back. So the real skill is to build the circuit so that the wrong answers cancel each other, like waves in water, and the right answer grows stronger. Every algorithm tonight is a different way of doing that. And although there are ten locks, there are only six ideas, because some locks share the same trick.
 
-## Slide 7: Tiers 5 and 6: Grover finds the key in 25 rounds, and more rounds make it worse
+## Slide 5: Locks 1 and 3: one clever question replaces 24 questions
 
-_117 words, about 54 seconds_
+_109 words, about 50 seconds_
 
-Tiers five and six are Grover search. The oracle marks the right key with a minus sign. Each round moves probability towards that key. Look at the left plot. The grey line is theory and the red dots are our measurements. At twenty-five rounds we find the key every time. But at fifty rounds the probability is back to zero. Grover is a rotation. If you rotate too far, you pass the answer. In tier six, sixty-four keys pass the test. So Grover needs only twelve rounds, and it returns all sixty-four. Then a classical checksum keeps one. We also made the oracle cheaper. Our version uses thirty-two percent fewer CNOT gates than a plain Toffoli build.
+Lock one hides a secret code of twenty-four zeros and ones. A normal computer has to ask twenty-four questions, one for each digit. Our circuit asks only one question, but it asks it about every possible input at the same time. The lock answers by turning some plus signs into minus signs. Then the wrong answers cancel, and the whole code appears at once. We ran it sixteen times and got the same code sixteen times. Lock three uses the same trick. It has twenty-four small boxes, and one question per box tells us whether that box hides a zero or a one. A normal computer may need thirty-three.
 
-## Slide 8: Tier 7: we read a 14-bit angle with 2 qubits instead of 15
+**If a judge asks, "What is phase kickback?"** The lock writes its answer as a plus or minus sign on the input, instead of writing it onto a separate qubit. Signs can cancel each other, and the last step of the circuit uses exactly that.
 
-_116 words, about 54 seconds_
+## Slide 6: Lock 2: a spy cannot listen without leaving fingerprints
 
-Tier seven hides a fourteen-bit angle inside a gate. The textbook method is phase estimation with fourteen control qubits. We use one control qubit and repeat it fourteen times. Each round reads one bit. We start with the lowest bit, because its phase is exactly zero or pi. So the result is certain. Then a phase gate removes the bits we already know, and we read the next one. The result is two qubits, and two two-qubit gates per circuit, against two hundred and thirty for the textbook version. This is why the checker shows a flag for a small number of qubits. The scoring rules say this recycling technique is allowed, if we explain it.
+_115 words, about 53 seconds_
 
-## Slide 9: Tiers 8, 9 and 10: breaking RSA means finding a period
+Lock two is different, because here quantum physics protects a secret instead of breaking one. Alice sends us a key, one qubit at a time. She sends it over two lines, and a spy is listening on one of them. Here is the beautiful part: nobody can look at a qubit without disturbing it. So when the spy listens, she leaves fingerprints, and they show up as errors. We compared a small sample of our results with Alice. On line A we found zero errors. On line B, about one in five was wrong. So line B was tapped. We threw it away and built the key from line A. This method is called BB84.
+
+**If a judge asks, "Why 21% and not 25%?"** The theory says 25% on average. We tested only 125 bits, so the measured number moves a little by chance. We found 26 wrong out of 125, which is 21%.
+
+## Slide 7: Lock 4: every run gives one clue, and about ten clues reveal the secret
+
+_97 words, about 45 seconds_
+
+Lock four hides a secret pattern of ten zeros and ones. Every time we run our circuit, it hands us one clue about that pattern. Think of a detective. One clue is not enough, but each new clue rules out half of the remaining suspects. We ran the circuit forty times, and every clue agreed with all the others. Then ordinary algebra combined the clues into one answer. On average, about eleven runs are enough. A normal computer needs about forty tries, and that gap grows very quickly as the secret gets longer. This is Simon's algorithm.
+
+**If a judge asks, "What does y · s = 0 mean?"** Write y above s. Look only at the positions where both have a 1, and count them. For every clue, that count is an even number.
+
+## Slide 8: Locks 5 and 6: finding one key among 1,024 in 25 steps
 
 _118 words, about 54 seconds_
 
-Tiers eight, nine and ten are Shor's algorithm. The key idea: factoring becomes finding a period. Take powers of two, modulo thirty-five. They repeat with period twelve. The circuit measures a number y, and y is always near a multiple of one thousand twenty-four divided by twelve. You see the evenly spaced peaks. From the period, two greatest common divisors give the factors, seven and five. Tier nine is the same with N equals seventy-seven and period thirty. Tier ten is Diffie-Hellman. There we measure two phases, and each shot votes for the secret exponent. Fourteen wins with thirty-four of forty votes. Like tier seven, we reuse one control qubit, so tier nine needs ten qubits, not twenty-one.
+Locks five and six are a search, like looking for a needle in a haystack. Lock five has about a thousand possible keys. A normal computer tries them one by one, so on average it needs about five hundred tries. Grover's algorithm needs twenty-five steps. Each step makes the right key a little more likely. In the plot, the line is the theory, and the dots are our results. After twenty-five steps we find the key every time. But if we keep going, the chance drops again, so we have to stop at the right moment. In lock six, sixty-four keys look correct at first. Grover finds all sixty-four, and then a quick check keeps the real one.
 
-## Slide 10: At these sizes classical wins, so the argument is about growth
+**If a judge asks, "Why do more steps make it worse?"** Each step turns the state by a fixed angle towards the right key. After 25 steps it points straight at the key. More steps turn it past the key.
 
-_103 words, about 48 seconds_
+## Slide 9: Lock 7: reading a hidden angle one digit at a time, with only 2 qubits
 
-Now the analysis. First, classical computers win at these sizes. A brute-force search of tier five takes ten milliseconds. Our simulated Grover takes two and a half seconds. So the argument is not speed today. It is growth. Double the key size, and classical work squares, while Grover's work only doubles. For Shor the gap is bigger: polynomial against sub-exponential. Second, some of our circuits are still toys. Our Shor multiplier is built from a table of all values. That table is more classical work than factoring seventy-seven by hand. A scalable version uses adder circuits. We say this clearly in our write-up.
+_115 words, about 53 seconds_
 
-## Slide 11: It ran on a real quantum computer: 14 of 14 bits correct on ibm_kingston
+Lock seven hides its key as an angle, like the position of a hand on a clock. The key is that angle, written with fourteen zeros and ones. The textbook method needs fifteen qubits to read it. We read it with only two. One helper qubit reads the last digit. Then we use the same helper again for the next digit, fourteen times in total. Each time, we first subtract the digits we already know, so every answer is a clear zero or a clear one. This matters because today's quantum computers make small mistakes. Our version uses two of the most error-prone operations in each circuit. The textbook version uses two hundred and thirty.
 
-_113 words, about 52 seconds_
+**If a judge asks, "What is a two-qubit gate, and why count it?"** It is an operation that makes two qubits interact. On today's machines it fails much more often than an operation on a single qubit, so a circuit with fewer of them gives cleaner results.
 
-We ran tier seven on a real IBM quantum computer, ibm kingston. All fourteen bits came out correct, and the decrypted line matches the hash. On the left, each point is one key bit. The grey circle is the ideal result with no noise. Our points sit very close to it. The average contrast is zero point nine seven. One honest note. This is a variant of our scored circuit. The scored version feeds each bit into the next circuit, which means fourteen jobs in the queue. For hardware we read each round in two bases and do the correction in software. So it is one job. The quantum part is the same.
+## Slide 10: Locks 8, 9 and 10: breaking RSA by finding a repeating pattern
 
-## Slide 12: Noise decides what survives: the gate count is the whole story
+_126 words, about 58 seconds_
 
-_114 words, about 53 seconds_
+The last three locks are the famous ones, because they attack RSA, the encryption that protects the internet. RSA is safe only because it is very hard to split a huge number into the two smaller numbers that multiply to make it. Shor's algorithm turns that into a different problem: finding a repeating pattern. Look at the row of numbers. We keep doubling, and we keep only the remainder after dividing by thirty-five. After twelve steps, the numbers start again. A quantum computer is very good at spotting that kind of rhythm. Once we know the twelve, simple arithmetic gives us thirty-five equals five times seven. Lock nine splits seventy-seven in the same way, and lock ten uses the same idea to uncover a shared secret.
 
-What about noise on the bigger circuits? We simulated every tier with an error after each two-qubit gate. At zero point one percent error, which is close to today's hardware, tier seven with two gates always works. Tier one with one hundred forty-three gates still works eighty-six percent of the time. Tier five with almost five thousand gates finds the key in only five percent of runs. The rule is simple. A circuit survives while error rate times gate count stays well below one. Our Shor circuit for seventy-seven has twenty-four thousand gates. That is about twenty-four errors per run. It needs error correction. We did not run error mitigation, and we say so.
+**If a judge asks, "How does 12 give the factors?"** Half of 12 is 6. Two to the power 6 is 64, and 64 leaves 29 after dividing by 35. The neighbours of 29 are 28 and 30. 28 shares the factor 7 with 35, and 30 shares the factor 5.
 
-## Slide 13: From toy locks to real keys: what would have to change
+## Slide 11: We ran lock 7 on a real IBM quantum computer, and all 14 digits were correct
 
-_119 words, about 55 seconds_
+_111 words, about 51 seconds_
 
-Last slide: what changes at real sizes. For RSA, we factored seventy-seven with ten qubits. RSA two thousand forty-eight needs thousands of error-corrected qubits and billions of gates. Published estimates went from twenty million noisy qubits in two thousand nineteen to under one million in two thousand twenty-five. For Grover, a one hundred twenty-eight bit key still needs two to the sixty-four rounds. Doubling the key length is enough defence. For BB84, real links have noise even without Eve, so they need error correction and a threshold. To close: we opened all ten locks. The algorithms are ready. The machines that can run them at real size are not here yet. Thank you. I am happy to take questions.
+Everything so far ran on a simulator, which is a normal computer pretending to be a quantum one. So we also ran lock seven on a real machine: an IBM quantum computer called Kingston. All fourteen digits of the key came out correct. Each bar in the chart is one digit of the key. A bar at one hundred percent would be a perfect signal with no noise. Our average is ninety-seven percent. It worked this well because the circuit is tiny. One honest note: for the real machine we changed how the digits are read out, so that everything could run as one job. The quantum part is the same.
+
+**If a judge asks, "What is signal strength?"** The write-up calls it contrast. It measures how clearly the qubit points in the expected direction. 100% is a perfect signal and 0% is pure noise. Each value is estimated from 1,024 runs, so a value can land slightly above 100% by chance.
+
+## Slide 12: Today a laptop still wins, so what matters is how the work grows
+
+_109 words, about 50 seconds_
+
+Now let me be honest. At these small sizes, a laptop beats our quantum circuits easily. A laptop opens lock five in ten milliseconds, while simulating our circuit takes two and a half seconds. What matters is how the work grows when the key gets longer. Every extra bit doubles the work for a normal computer. For Grover, the work doubles only after two extra bits. For Shor the gap is even bigger, and that is why RSA is the one people worry about. One more honest point: our Shor circuits use a shortcut that works only for small numbers, so a real attack needs a much bigger circuit.
+
+**If a judge asks, "What is the shortcut in the Shor circuits?"** The multiplication step is built from a list of all its answers, which we work out beforehand on a normal computer. That list is as long as the number we are factoring, so it is impossible for a real key. A real attack builds the multiplication from adder circuits instead.
+
+## Slide 13: Why real encryption is still safe today: noise
+
+_99 words, about 46 seconds_
+
+And here is the reason nobody can break real encryption yet: noise. Every operation on a real quantum computer has a small chance of going wrong. We tested this in simulation with one error in every thousand operations, which is roughly where today's machines are. Lock seven, with two operations, always works. But lock five has almost five thousand operations, and it finds the key only five times in a hundred. Our circuit for seventy-seven has twenty-four thousand, so it would suffer about twenty-four errors in every run. Long circuits need error correction, and that is still being built.
+
+**If a judge asks, "Did you use error mitigation?"** No. We measured how the plain circuits behave under noise, and we say so in the write-up.
+
+## Slide 14: What difference does this make?
+
+_121 words, about 56 seconds_
+
+So what difference does this make? First, we showed that these attacks really work from start to finish. Every key came out of a quantum circuit, and one came out of a real machine. Second, we showed that small circuits are what today's machines can actually run. Third, the warning is real. In 2019, experts estimated that breaking real RSA would need twenty million qubits. In 2025, that estimate dropped below one million. So the world is already moving to new encryption that is designed to resist quantum computers. To sum up: we opened all ten locks. The algorithms are ready. The machines are not ready yet, but they are coming. Thank you, and I am happy to take your questions.
+
+**If a judge asks, "Where do the RSA numbers come from?"** Gidney and Ekerå, 2019: about 20 million noisy qubits for 8 hours. Gidney, 2025: under one million noisy qubits in under a week. The new quantum-safe standards are NIST FIPS 203, 204 and 205, published in August 2024.
+
+## Backup slides
+
+Slide 15 is the table of circuit costs from the official checker. Slides 16 to 25 hold one page for each lock, with its circuit, its measured result and its numbers. Jump to them if a judge asks about one lock in detail.

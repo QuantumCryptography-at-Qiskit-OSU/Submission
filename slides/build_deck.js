@@ -1,24 +1,73 @@
+// Builds slides/Cryptographers.pptx and slides/SPEAKER_NOTES.md.
+// Run:  NODE_PATH=<node_modules with pptxgenjs and sharp> node build_deck.js
+// The plots in slides/figures/ come from make_figures.py.
 const pptxgen = require("pptxgenjs");
 const sharp = require("sharp");
-const path = require("path");
+const fs = require("fs");
 const SKILL = "/home/avopti/.claude/skills/synced/a2ad65a7-7655-4bae-a49d-422dfad1841b_6001c603-3df1-4a5c-b446-eca2626d28bb/pptx";
 const { applyTheme } = require(SKILL + "/scripts/apply_theme.js");
 
 const SUB = "/home/avopti/Documents/QiskitFallFest2026/Submission";
 const FIG = SUB + "/slides/figures/";
 const OUT = SUB + "/slides/Cryptographers.pptx";
+const NOTES_OUT = SUB + "/slides/SPEAKER_NOTES.md";
 
+// Blue, pink and white, the colours Qiskit uses.
+const NAVY = "001141", BLUE = "0F62FE", PINK = "D02670", GRID = "D0E2FF";
 const THEME = {
   name: "Cryptographers",
-  headFontFace: "Cambria",
+  headFontFace: "Arial",
   bodyFontFace: "Calibri",
   colors: {
-    dk1: "1F2933", lt1: "FFFFFF", dk2: "060D18", lt2: "F1F3F5",
-    accent1: "BA0C2F", accent2: "5B6770", accent3: "9AA5B1", accent4: "C9A227",
-    accent5: "2A6F97", accent6: "3D4852", hlink: "BA0C2F", folHlink: "5B6770",
+    dk1: NAVY, lt1: "FFFFFF", dk2: "001D6C", lt2: "EDF5FF",
+    accent1: BLUE, accent2: PINK, accent3: "A6C8FF", accent4: "FF7EB6",
+    accent5: "FFF0F7", accent6: "002D9C", hlink: BLUE, folHlink: PINK,
   },
 };
 const W = 13.333, H = 7.5, MX = 0.6;
+
+// ---------- what I say on each slide ----------
+// "ask" holds short answers for questions a judge may ask about that slide.
+const TALK = [
+  { title: "Ten locks, one message",
+    say: "Good evening, everyone. We are team Cryptographers: Logan, Zach, Bryce, and me, Avaneesh. Our challenge was called Ten Locks, One Message. We were given ten locked files, and our job was to open every one of them with a quantum computer. In the next ten minutes, I will show you what we did, how we did it, and why it matters." },
+  { title: "The challenge: ten locked files, and a quantum circuit must find each key",
+    say: "Let me start with the problem. Each file was scrambled with encryption, so it looked like random nonsense. To unscramble a file, you need its key, and the key is just a secret number. The challenge was to build a quantum circuit that finds that number for us. Once we have the key, an ordinary computer unscrambles the file, and a readable sentence appears. Each lock was designed for a different quantum algorithm, and the locks get harder from one to ten." },
+  { title: "We opened all ten locks, and together they spell one message",
+    say: "Here is the result. We opened all ten locks. Each file gave us one line, and together the ten lines are secret directions around the Ohio State campus. The official checker confirmed that all ten lines are correct, and that every key really came from a quantum circuit. That gave us all forty points for solving the locks. We also ran one of our circuits on a real IBM quantum computer, and I will come back to that." },
+  { title: "The one idea behind every lock: make the wrong answers cancel",
+    say: "Before the locks, here is the one idea you need. A normal computer tests one key at a time. A quantum computer can hold all the possible keys at the same moment. But there is a catch: when you measure, you get only one answer back. So the real skill is to build the circuit so that the wrong answers cancel each other, like waves in water, and the right answer grows stronger. Every algorithm tonight is a different way of doing that. And although there are ten locks, there are only six ideas, because some locks share the same trick." },
+  { title: "Locks 1 and 3: one clever question replaces 24 questions",
+    say: "Lock one hides a secret code of twenty-four zeros and ones. A normal computer has to ask twenty-four questions, one for each digit. Our circuit asks only one question, but it asks it about every possible input at the same time. The lock answers by turning some plus signs into minus signs. Then the wrong answers cancel, and the whole code appears at once. We ran it sixteen times and got the same code sixteen times. Lock three uses the same trick. It has twenty-four small boxes, and one question per box tells us whether that box hides a zero or a one. A normal computer may need thirty-three.",
+    ask: [["What is phase kickback?", "The lock writes its answer as a plus or minus sign on the input, instead of writing it onto a separate qubit. Signs can cancel each other, and the last step of the circuit uses exactly that."]] },
+  { title: "Lock 2: a spy cannot listen without leaving fingerprints",
+    say: "Lock two is different, because here quantum physics protects a secret instead of breaking one. Alice sends us a key, one qubit at a time. She sends it over two lines, and a spy is listening on one of them. Here is the beautiful part: nobody can look at a qubit without disturbing it. So when the spy listens, she leaves fingerprints, and they show up as errors. We compared a small sample of our results with Alice. On line A we found zero errors. On line B, about one in five was wrong. So line B was tapped. We threw it away and built the key from line A. This method is called BB84.",
+    ask: [["Why 21% and not 25%?", "The theory says 25% on average. We tested only 125 bits, so the measured number moves a little by chance. We found 26 wrong out of 125, which is 21%."]] },
+  { title: "Lock 4: every run gives one clue, and about ten clues reveal the secret",
+    say: "Lock four hides a secret pattern of ten zeros and ones. Every time we run our circuit, it hands us one clue about that pattern. Think of a detective. One clue is not enough, but each new clue rules out half of the remaining suspects. We ran the circuit forty times, and every clue agreed with all the others. Then ordinary algebra combined the clues into one answer. On average, about eleven runs are enough. A normal computer needs about forty tries, and that gap grows very quickly as the secret gets longer. This is Simon's algorithm.",
+    ask: [["What does y · s = 0 mean?", "Write y above s. Look only at the positions where both have a 1, and count them. For every clue, that count is an even number."]] },
+  { title: "Locks 5 and 6: finding one key among 1,024 in 25 steps",
+    say: "Locks five and six are a search, like looking for a needle in a haystack. Lock five has about a thousand possible keys. A normal computer tries them one by one, so on average it needs about five hundred tries. Grover's algorithm needs twenty-five steps. Each step makes the right key a little more likely. In the plot, the line is the theory, and the dots are our results. After twenty-five steps we find the key every time. But if we keep going, the chance drops again, so we have to stop at the right moment. In lock six, sixty-four keys look correct at first. Grover finds all sixty-four, and then a quick check keeps the real one.",
+    ask: [["Why do more steps make it worse?", "Each step turns the state by a fixed angle towards the right key. After 25 steps it points straight at the key. More steps turn it past the key."]] },
+  { title: "Lock 7: reading a hidden angle one digit at a time, with only 2 qubits",
+    say: "Lock seven hides its key as an angle, like the position of a hand on a clock. The key is that angle, written with fourteen zeros and ones. The textbook method needs fifteen qubits to read it. We read it with only two. One helper qubit reads the last digit. Then we use the same helper again for the next digit, fourteen times in total. Each time, we first subtract the digits we already know, so every answer is a clear zero or a clear one. This matters because today's quantum computers make small mistakes. Our version uses two of the most error-prone operations in each circuit. The textbook version uses two hundred and thirty.",
+    ask: [["What is a two-qubit gate, and why count it?", "It is an operation that makes two qubits interact. On today's machines it fails much more often than an operation on a single qubit, so a circuit with fewer of them gives cleaner results."]] },
+  { title: "Locks 8, 9 and 10: breaking RSA by finding a repeating pattern",
+    say: "The last three locks are the famous ones, because they attack RSA, the encryption that protects the internet. RSA is safe only because it is very hard to split a huge number into the two smaller numbers that multiply to make it. Shor's algorithm turns that into a different problem: finding a repeating pattern. Look at the row of numbers. We keep doubling, and we keep only the remainder after dividing by thirty-five. After twelve steps, the numbers start again. A quantum computer is very good at spotting that kind of rhythm. Once we know the twelve, simple arithmetic gives us thirty-five equals five times seven. Lock nine splits seventy-seven in the same way, and lock ten uses the same idea to uncover a shared secret.",
+    ask: [["How does 12 give the factors?", "Half of 12 is 6. Two to the power 6 is 64, and 64 leaves 29 after dividing by 35. The neighbours of 29 are 28 and 30. 28 shares the factor 7 with 35, and 30 shares the factor 5."]] },
+  { title: "We ran lock 7 on a real IBM quantum computer, and all 14 digits were correct",
+    say: "Everything so far ran on a simulator, which is a normal computer pretending to be a quantum one. So we also ran lock seven on a real machine: an IBM quantum computer called Kingston. All fourteen digits of the key came out correct. Each bar in the chart is one digit of the key. A bar at one hundred percent would be a perfect signal with no noise. Our average is ninety-seven percent. It worked this well because the circuit is tiny. One honest note: for the real machine we changed how the digits are read out, so that everything could run as one job. The quantum part is the same.",
+    ask: [["What is signal strength?", "The write-up calls it contrast. It measures how clearly the qubit points in the expected direction. 100% is a perfect signal and 0% is pure noise. Each value is estimated from 1,024 runs, so a value can land slightly above 100% by chance."]] },
+  { title: "Today a laptop still wins, so what matters is how the work grows",
+    say: "Now let me be honest. At these small sizes, a laptop beats our quantum circuits easily. A laptop opens lock five in ten milliseconds, while simulating our circuit takes two and a half seconds. What matters is how the work grows when the key gets longer. Every extra bit doubles the work for a normal computer. For Grover, the work doubles only after two extra bits. For Shor the gap is even bigger, and that is why RSA is the one people worry about. One more honest point: our Shor circuits use a shortcut that works only for small numbers, so a real attack needs a much bigger circuit.",
+    ask: [["What is the shortcut in the Shor circuits?", "The multiplication step is built from a list of all its answers, which we work out beforehand on a normal computer. That list is as long as the number we are factoring, so it is impossible for a real key. A real attack builds the multiplication from adder circuits instead."]] },
+  { title: "Why real encryption is still safe today: noise",
+    say: "And here is the reason nobody can break real encryption yet: noise. Every operation on a real quantum computer has a small chance of going wrong. We tested this in simulation with one error in every thousand operations, which is roughly where today's machines are. Lock seven, with two operations, always works. But lock five has almost five thousand operations, and it finds the key only five times in a hundred. Our circuit for seventy-seven has twenty-four thousand, so it would suffer about twenty-four errors in every run. Long circuits need error correction, and that is still being built.",
+    ask: [["Did you use error mitigation?", "No. We measured how the plain circuits behave under noise, and we say so in the write-up."]] },
+  { title: "What difference does this make?",
+    say: "So what difference does this make? First, we showed that these attacks really work from start to finish. Every key came out of a quantum circuit, and one came out of a real machine. Second, we showed that small circuits are what today's machines can actually run. Third, the warning is real. In 2019, experts estimated that breaking real RSA would need twenty million qubits. In 2025, that estimate dropped below one million. So the world is already moving to new encryption that is designed to resist quantum computers. To sum up: we opened all ten locks. The algorithms are ready. The machines are not ready yet, but they are coming. Thank you, and I am happy to take your questions.",
+    ask: [["Where do the RSA numbers come from?", "Gidney and Ekerå, 2019: about 20 million noisy qubits for 8 hours. Gidney, 2025: under one million noisy qubits in under a week. The new quantum-safe standards are NIST FIPS 203, 204 and 205, published in August 2024."]] },
+];
 
 async function main() {
   const pres = new pptxgen();
@@ -27,20 +76,20 @@ async function main() {
   pres.author = "Cryptographers";
   pres.theme = { headFontFace: THEME.headFontFace, bodyFontFace: THEME.bodyFontFace };
   const C = pres.SchemeColor;
-  const FOOT = "Cryptographers  ·  Qiskit Fall Fest 2026  ·  Challenge 2: Ten Locks, One Message";
 
   pres.defineSlideMaster({
-    title: "TITLE", background: { color: "FFFFFF" },
+    title: "TITLE", background: { color: NAVY },
     objects: [
-      { placeholder: { options: { name: "title", type: "title", x: MX, y: 2.0, w: 6.9, h: 1.9, fontSize: 44, bold: true, color: C.text1, valign: "top", align: "left", margin: 0 }, text: "" } },
-      { placeholder: { options: { name: "body", type: "body", x: MX, y: 4.1, w: 6.9, h: 1.2, fontSize: 20, color: C.text1, valign: "top", margin: 0 }, text: "" } },
+      { rect: { x: 8.1, y: 0, w: W - 8.1, h: H, fill: { color: "FFFFFF" }, line: { color: "FFFFFF", width: 0 } } },
+      { placeholder: { options: { name: "title", type: "title", x: MX, y: 1.5, w: 6.9, h: 1.7, fontSize: 48, bold: true, color: C.background1, valign: "top", align: "left", margin: 0 }, text: "" } },
+      { placeholder: { options: { name: "body", type: "body", x: MX, y: 3.3, w: 6.9, h: 2.4, fontSize: 22, color: C.background1, valign: "top", margin: 0 }, text: "" } },
     ],
   });
-  for (const [name] of [["CONTENT", ""], ["BACKUP", "Backup  ·  "]]) {
+  for (const name of ["CONTENT", "BACKUP"]) {
     pres.defineSlideMaster({
       title: name, background: { color: "FFFFFF" },
       objects: [
-        { placeholder: { options: { name: "title", type: "title", x: MX, y: 0.35, w: W - 2 * MX, h: 1.05, fontSize: name === "CONTENT" ? 32 : 28, bold: true, color: C.text1, valign: "middle", align: "left", margin: 0 }, text: "" } },
+        { placeholder: { options: { name: "title", type: "title", x: MX, y: 0.35, w: W - 2 * MX, h: 1.05, fontSize: name === "CONTENT" ? 30 : 28, bold: true, color: C.text1, valign: "middle", align: "left", margin: 0 }, text: "" } },
       ],
       slideNumber: { x: W - MX - 0.6, y: 7.0, w: 0.6, h: 0.3, fontSize: 10, color: C.text1, align: "right" },
     });
@@ -57,308 +106,385 @@ async function main() {
     slide.addImage({ path: file, x: x + (w - iw) / 2, y: y + (h - ih) / 2, w: iw, h: ih, altText: alt, objectName: nm("Picture") });
   }
   const text = (slide, t, o) => slide.addText(t, Object.assign({ isTextBox: true, margin: 0, color: C.text1, fontSize: 16, valign: "top", objectName: nm("Text") }, o));
-  const panel = (slide, x, y, w, h) => slide.addShape(pres.ShapeType.roundRect, { x, y, w, h, rectRadius: 0.08, fill: { color: C.background2 }, line: { color: C.background2, width: 0 }, objectName: nm("Panel") });
-  function stat(slide, x, y, w, big, label, color) {
-    panel(slide, x, y, w, 1.45);
-    text(slide, big, { x: x + 0.2, y: y + 0.12, w: w - 0.4, h: 0.75, fontSize: 36, bold: true, color: color || C.accent1, fontFace: THEME.headFontFace, valign: "middle" });
-    text(slide, label, { x: x + 0.2, y: y + 0.88, w: w - 0.4, h: 0.5, fontSize: 14, color: C.text1 });
+  const panel = (slide, x, y, w, h, fill) => slide.addShape(pres.ShapeType.roundRect, { x, y, w, h, rectRadius: 0.08, fill: { color: fill || C.background2 }, line: { color: fill || C.background2, width: 0 }, objectName: nm("Panel") });
+  // A big number with one plain sentence under it.
+  function stat(slide, x, y, w, big, label, pink, h) {
+    h = h || 1.5;
+    panel(slide, x, y, w, h, pink ? C.accent5 : C.background2);
+    text(slide, big, { x: x + 0.2, y: y + 0.1, w: w - 0.4, h: 0.7, fontSize: 32, bold: true, color: pink ? C.accent2 : C.accent1, fontFace: THEME.headFontFace, valign: "middle" });
+    text(slide, label, { x: x + 0.2, y: y + 0.78, w: w - 0.4, h: h - 0.85, fontSize: 14 });
   }
+  // Numbered steps: a bold line and one or two plain sentences.
   function steps(slide, x, y, w, items, gap) {
     gap = gap || 1.0;
     items.forEach((it, i) => {
       const yy = y + i * gap;
-      slide.addShape(pres.ShapeType.ellipse, { x, y: yy, w: 0.46, h: 0.46, fill: { color: C.accent1 }, line: { color: C.accent1, width: 0 }, objectName: nm("Step dot") });
-      text(slide, String(i + 1), { x, y: yy, w: 0.46, h: 0.46, fontSize: 16, bold: true, color: C.background1, align: "center", valign: "middle" });
-      text(slide, [{ text: it[0], options: { bold: true, breakLine: true } }, { text: it[1], options: { color: C.text1 } }],
-        { x: x + 0.62, y: yy - 0.04, w: w - 0.62, h: gap - 0.08, fontSize: 16 });
+      slide.addShape(pres.ShapeType.ellipse, { x, y: yy, w: 0.48, h: 0.48, fill: { color: C.accent1 }, line: { color: C.accent1, width: 0 }, objectName: nm("Step dot") });
+      text(slide, String(i + 1), { x, y: yy, w: 0.48, h: 0.48, fontSize: 16, bold: true, color: C.background1, align: "center", valign: "middle" });
+      text(slide, [{ text: it[0], options: { bold: true, fontSize: 17, breakLine: true } }, { text: it[1] }],
+        { x: x + 0.66, y: yy - 0.02, w: w - 0.66, h: gap - 0.1, fontSize: 15 });
     });
   }
-  const cell = (t, o) => ({ text: t, options: Object.assign({ fontSize: 14, color: C.text1, valign: "middle", margin: [0.03, 0.08, 0.03, 0.08] }, o || {}) });
+  const cell = (t, o) => ({ text: t, options: Object.assign({ fontSize: 14, color: C.text1, valign: "middle", margin: [0.03, 0.1, 0.03, 0.1] }, o || {}) });
   const head = (t, o) => cell(t, Object.assign({ bold: true, color: C.background1, fill: { color: C.accent6 } }, o || {}));
   function table(slide, x, y, w, colW, header, rows, opts) {
-    const fs = (opts && opts.fontSize) || 14;
-    const data = [header.map((h) => head(h, { fontSize: fs }))].concat(rows.map((r, i) => r.map((v, j) => {
-      const o = { fontSize: fs, fill: { color: i % 2 ? C.background2 : C.background1 } };
+    const size = (opts && opts.fontSize) || 14;
+    const data = [header.map((h) => head(h, { fontSize: size }))].concat(rows.map((r, i) => r.map((v) => {
+      const o = { fontSize: size, fill: { color: i % 2 ? C.background2 : C.background1 } };
       if (typeof v === "object") return cell(v.text, Object.assign(o, v.options));
       return cell(v, o);
     })));
-    slide.addTable(data, { x, y, w, colW, rowH: (opts && opts.rowH) || 0.42, border: { type: "solid", pt: 0.5, color: "E1E5EA" }, objectName: nm("Table") });
+    slide.addTable(data, { x, y, w, colW, rowH: (opts && opts.rowH) || 0.42, border: { type: "solid", pt: 0.5, color: GRID }, objectName: nm("Table") });
   }
-  const add = (section, layout) => pres.addSlide({ masterName: layout || "CONTENT", sectionTitle: section });
+  const chartLook = (title) => ({
+    barDir: "col", chartColors: [BLUE], showLegend: false,
+    showTitle: true, title, titleFontSize: 14, titleColor: NAVY, titleFontFace: "+mn-lt",
+    showValue: true, dataLabelPosition: "outEnd", dataLabelFontSize: 13, dataLabelColor: NAVY, dataLabelFontFace: "+mn-lt",
+    catAxisLabelColor: NAVY, valAxisLabelColor: NAVY, catAxisLabelFontSize: 12, valAxisLabelFontSize: 12, catAxisLabelFontFace: "+mn-lt", valAxisLabelFontFace: "+mn-lt",
+    valAxisMinVal: 0, valGridLine: { color: GRID, size: 0.5 }, catGridLine: { style: "none" },
+  });
+  let n = 0;
+  function add(layout) {
+    const t = TALK[n++];
+    const s = pres.addSlide({ masterName: layout || "CONTENT", sectionTitle: "Talk" });
+    s.addText(t.title, { placeholder: "title" });
+    s.addNotes(t.say);
+    return s;
+  }
 
   // ================= MAIN TALK =================
   pres.addSection({ title: "Talk" });
 
   // 1 Title
   {
-    const s = add("Talk", "TITLE");
-    s.addText("Ten locks, one message", { placeholder: "title" });
-    s.addText([{ text: "Team Cryptographers", options: { bold: true, color: C.accent1, breakLine: true } }, { text: "Avaneesh  ·  Logan  ·  Zach" }], { placeholder: "body" });
-    text(s, "Qiskit Fall Fest 2026 at The Ohio State University  ·  Challenge 2: Quantum Cryptography", { x: MX, y: 6.55, w: 6.9, h: 0.6, fontSize: 14, color: C.text1 });
-    await img(s, FIG + "model.png", 8.2, 0.4, W - 8.8, 6.7, "3D model of a quantum computer cryostat, built by our team");
-    s.addNotes("Good evening. We are team Cryptographers. Ten files were locked. Each lock opens with a different quantum algorithm. In the next ten minutes I will show you how we opened all ten, what each circuit costs, and what happens at real key sizes. The model on the right is a quantum computer I built in 3D for my own website.");
+    const s = add("TITLE");
+    s.addText([
+      { text: "How we opened ten encrypted files with quantum circuits", options: { breakLine: true } },
+      { text: " ", options: { fontSize: 12, breakLine: true } },
+      { text: "Team Cryptographers", options: { bold: true, color: C.accent4, breakLine: true } },
+      { text: "Avaneesh  ·  Logan  ·  Zach  ·  Bryce" },
+    ], { placeholder: "body" });
+    text(s, "Qiskit Fall Fest 2026 at The Ohio State University  ·  Challenge 2: Quantum Cryptography", { x: MX, y: 6.55, w: 6.9, h: 0.6, fontSize: 14, color: C.accent3 });
+    await img(s, FIG + "model.png", 8.5, 0.4, W - 8.9, 6.7, "3D model of a quantum computer, built by our team");
   }
 
-  // 2 The message
+  // 2 The challenge
   {
-    const s = add("Talk");
-    s.addText("We opened all ten locks, and each one ran a quantum circuit", { placeholder: "title" });
+    const s = add();
+    const cw = 3.55, gap = 0.74, top = 1.7, ch = 3.15;
+    const cards = [
+      ["1", "A locked file", "The file is scrambled, so it looks like random nonsense.", "8d 44 e1 a7 92 c6 5c 9a 05 b4 6d f5 22 e5 …", false],
+      ["2", "A quantum circuit finds the key", "The key is a secret number. Our circuit has to work it out.", "key = 18", true],
+      ["3", "The key opens the file", "A normal computer unscrambles the file, and a sentence appears.", "QC-08: inside is a map of old tunnels under Ohio Stadium", false],
+    ];
+    cards.forEach((c, i) => {
+      const x = MX + i * (cw + gap);
+      panel(s, x, top, cw, ch, c[4] ? C.accent5 : C.background2);
+      s.addShape(pres.ShapeType.ellipse, { x: x + 0.25, y: top + 0.25, w: 0.5, h: 0.5, fill: { color: c[4] ? C.accent2 : C.accent1 }, line: { color: c[4] ? C.accent2 : C.accent1, width: 0 }, objectName: nm("Step dot") });
+      text(s, c[0], { x: x + 0.25, y: top + 0.25, w: 0.5, h: 0.5, fontSize: 16, bold: true, color: C.background1, align: "center", valign: "middle" });
+      text(s, c[1], { x: x + 0.9, y: top + 0.2, w: cw - 1.1, h: 0.6, fontSize: 18, bold: true, valign: "middle" });
+      text(s, c[2], { x: x + 0.25, y: top + 0.95, w: cw - 0.5, h: 0.85, fontSize: 15 });
+      text(s, c[3], { x: x + 0.25, y: top + 1.9, w: cw - 0.5, h: 1.0, fontSize: 16, bold: true, fontFace: "Courier New", color: c[4] ? C.accent2 : C.accent1, valign: "middle" });
+      if (i < 2) s.addShape(pres.ShapeType.rightArrow, { x: x + cw + 0.14, y: top + ch / 2 - 0.23, w: gap - 0.28, h: 0.46, fill: { color: C.accent3 }, line: { color: C.accent3, width: 0 }, objectName: nm("Arrow") });
+    });
+    const half = (W - 2 * MX - 0.4) / 2;
+    [["The rule. ", "The key must come out of a quantum circuit. Guessing it with a normal computer earns only a quarter of the points."],
+     ["Ten locks, ten levels. ", "Each lock is built for a different quantum algorithm, and the locks get harder from 1 to 10."]].forEach((r, i) => {
+      const x = MX + i * (half + 0.4);
+      text(s, [{ text: r[0], options: { bold: true, color: C.accent1 } }, { text: r[1] }], { x, y: 5.3, w: half, h: 1.4, fontSize: 18, valign: "middle" });
+    });
+  }
+
+  // 3 The message
+  {
+    const s = add();
     const lines = [
       "Meet at the Oval when the clock reads 6:47", "bring 3 buckeyes, a blue pen", "Mirror Lake hides a brass key by the northeast rock",
       "Brutus will whistle Carmen Ohio slightly off-key", "count the lamps on the Long Walk: there are nineteen", "the Thompson Library elevator stops twice on floor 8",
       "ask the night librarian for Folio 1870-Q, not 1870-R", "inside is a map of old tunnels under Ohio Stadium", "follow it south past Gate 17 to a door painted scarlet",
       "knock four times, shout O-H, and wait for the I-O",
     ];
-    panel(s, MX, 1.6, 8.3, 5.15);
+    panel(s, MX, 1.6, 8.3, 5.2);
     lines.forEach((l, i) => {
-      const y = 1.78 + i * 0.48;
-      text(s, String(i + 1).padStart(2, "0"), { x: MX + 0.3, y, w: 0.6, h: 0.42, fontSize: 16, bold: true, color: C.accent1, valign: "middle" });
-      text(s, l, { x: MX + 0.95, y, w: 7.2, h: 0.42, fontSize: 16, valign: "middle" });
+      const y = 1.8 + i * 0.48;
+      text(s, String(i + 1).padStart(2, "0"), { x: MX + 0.3, y, w: 0.6, h: 0.42, fontSize: 17, bold: true, color: C.accent1, valign: "middle" });
+      text(s, l, { x: MX + 0.95, y, w: 7.2, h: 0.42, fontSize: 17, valign: "middle" });
     });
-    stat(s, 9.3, 1.6, 3.43, "10 / 10", "tiers: hash matches and a circuit ran in solve()");
-    stat(s, 9.3, 3.45, 3.43, "40 / 40", "tier points in the official checker");
-    stat(s, 9.3, 5.3, 3.43, "1 real device", "tier 7 also ran on ibm_kingston", C.text1);
-    s.addNotes("Here is the message. Ten lines, one from each file. Every line matches the official hash, and every tier ran a quantum circuit inside solve. That is all forty tier points in the checker. We also ran one tier on a real IBM quantum computer. I will come back to that.");
+    stat(s, 9.3, 1.6, 3.43, "10 of 10", "locks opened, and every key came from a quantum circuit", false, 1.6);
+    stat(s, 9.3, 3.4, 3.43, "40 of 40", "points for solving the locks, confirmed by the official checker", false, 1.6);
+    stat(s, 9.3, 5.2, 3.43, "1 machine", "Lock 7 also ran on a real IBM quantum computer", true, 1.6);
   }
 
-  // 3 Results table
+  // 4 The one idea, and the map of the talk
   {
-    const s = add("Talk");
-    s.addText("Six ideas open ten locks: what each scored circuit costs", { placeholder: "title" });
-    const rows = [
-      ["1", "Bernstein-Vazirani", "25", "143", "44", "16 shots, 1 oracle call"],
-      ["2", "BB84 key exchange", "1", "0", "3", "2,048 circuits, 1 shot each"],
-      ["3", "Deutsch-Jozsa", "7", "7,808", "8,771", "24 circuits, 1 oracle call each"],
-      ["4", "Simon", "20", "179", "195", "40 shots, about 11 needed"],
-      ["5", "Grover", "19", "4,750", "4,960", "256 shots, 25 rounds"],
-      ["6", "Grover + checksum filter", "16", "2,064", "2,826", "4,096 shots, 12 rounds"],
-      ["7", "Iterative phase estimation", "2", "2", "11", "14 rounds, 64 shots each"],
-      ["8", "Shor, N = 35", "9", "5,053", "10,406", "24 shots"],
-      ["9", "Shor, N = 77", "10", "23,968", "45,696", "24 shots"],
-      ["10", "Shor for discrete log, p = 83", "10", "13,157", "26,112", "40 shots"],
-    ];
-    table(s, MX, 1.6, W - 2 * MX, [0.8, 3.9, 1.3, 1.7, 1.3, 3.133], ["Tier", "Algorithm", "Qubits", "2-qubit gates", "Depth", "Runs"], rows, { rowH: 0.415 });
-    text(s, "Numbers from tools/check_submission.py after transpiling to rz, sx, x, cx. In tiers 1, 3 and 4 almost every gate belongs to the provided oracle.", { x: MX, y: 6.3, w: W - 2 * MX, h: 0.5, fontSize: 14, color: C.text1 });
-    s.addNotes("This table is every tier on one slide. The numbers come from the official checker. Ten tiers, but only six ideas. Tiers one and three are the same trick. Five and six are both Grover. Eight, nine and ten are all Shor. So I will explain six ideas. Look at tier seven: two qubits and two two-qubit gates. Remember that one.");
+    const s = add();
+    steps(s, MX, 1.75, 5.2, [
+      ["Hold every possible key at once", "A normal computer tests one key at a time. A quantum computer can hold all of them together."],
+      ["Measuring gives only one answer", "So we cannot simply read all the keys out. We need a trick."],
+      ["Make the wrong answers cancel", "Like waves in water, wrong answers cancel and the right answer grows. Then we measure."],
+    ], 1.6);
+    text(s, "Ten locks, but only six ideas", { x: 6.3, y: 1.6, w: 6.43, h: 0.4, fontSize: 17, bold: true });
+    table(s, 6.3, 2.1, 6.43, [1.15, 3.18, 2.1], ["Locks", "The idea in plain words", "Algorithm"], [
+      ["1 and 3", "Ask one clever question instead of many", "Bernstein-Vazirani, Deutsch-Jozsa"],
+      ["2", "Catch a spy on the line", "BB84"],
+      ["4", "Collect clues, then solve them", "Simon"],
+      ["5 and 6", "Search a haystack faster", "Grover"],
+      ["7", "Read a hidden angle digit by digit", "Phase estimation"],
+      ["8, 9, 10", "Find a repeating pattern", "Shor"],
+    ].map((r) => [{ text: r[0], options: { bold: true, color: C.accent1 } }, r[1], r[2]]), { rowH: [0.5, 0.78, 0.6, 0.6, 0.6, 0.6, 0.6] });
   }
 
-  // 4 Tiers 1 and 3
+  // 5 Locks 1 and 3
   {
-    const s = add("Talk");
-    s.addText("Tiers 1 and 3: one question answers what classical needs 24 or 33 for", { placeholder: "title" });
-    steps(s, MX, 1.7, 4.6, [
-      ["Target qubit in |−⟩", "The oracle's answer becomes a + or − sign on the input. This is phase kickback."],
-      ["Ask about all inputs at once", "Hadamards put every input in the question. One oracle call signs them all."],
-      ["Let the signs interfere", "Hadamards again. Tier 1: the hidden string appears. Tier 3: 000000 means constant."],
+    const s = add();
+    steps(s, MX, 1.75, 4.9, [
+      ["Ask about every input at once", "One gate on each qubit, the H gate, puts all inputs into a single question."],
+      ["The lock answers with signs", "It turns some plus signs into minus signs. This is called phase kickback."],
+      ["The wrong answers cancel", "The same gates again, and only the secret code is left to measure."],
     ], 1.25);
-    await img(s, FIG + "bloch_minus.png", MX + 0.6, 5.3, 2.2, 1.55, "Bloch sphere of the target qubit in the minus state");
-    text(s, "Without |−⟩ the method fails: 50% in our test.", { x: MX + 2.9, y: 5.6, w: 2.3, h: 1.0, fontSize: 14, color: C.text1 });
-    await img(s, SUB + "/tier01/diagram_bernstein_vazirani.png", 5.6, 1.6, 7.13, 2.5, "Bernstein-Vazirani circuit: X and H on the target, H on 24 inputs, oracle, H, measure");
-    await img(s, FIG + "t3_hist.png", 5.6, 4.2, 7.13, 2.6, "Histograms: a constant oracle gives 000000 in all 16 shots, a balanced oracle never does");
-    s.addNotes("Tiers one and three use the same trick. First, we put the target qubit in the minus state. Now the oracle does not flip a bit. It puts a plus or minus sign on the input. That is phase kickback. Second, Hadamard gates put all inputs into one question. One oracle call signs all of them. Third, Hadamards again, and the signs add up or cancel. In tier one the hidden twenty-four bit string appears directly. All sixteen shots agree. In tier three, a constant function always gives all zeros, and a balanced function never does. You see both cases in the histograms. Classically, tier one needs twenty-four questions and tier three needs up to thirty-three. We need one.");
+    stat(s, MX, 5.45, 2.35, "24 → 1", "questions needed for lock 1", false, 1.35);
+    stat(s, MX + 2.55, 5.45, 2.35, "33 → 1", "questions per box in lock 3", true, 1.35);
+    await img(s, SUB + "/tier01/diagram_bernstein_vazirani.png", 5.9, 1.55, 6.83, 2.75, "Circuit for lock 1: an H gate on every qubit, the lock, H gates again, then measure");
+    panel(s, 5.9, 4.45, 6.83, 1.05);
+    text(s, [{ text: "Lock 1: 16 runs, and the same code every time", options: { bold: true, breakLine: true } }, { text: "110001111100110101001001", options: { fontFace: "Courier New", bold: true, color: C.accent1, fontSize: 18 } }], { x: 6.1, y: 4.5, w: 6.43, h: 0.95, fontSize: 15, valign: "middle" });
+    panel(s, 5.9, 5.65, 6.83, 1.15, C.accent5);
+    text(s, [{ text: "Lock 3: the same trick, 24 times. ", options: { bold: true } }, { text: "Each of the 24 boxes either always gives the same answer, or gives 0 for half of its inputs and 1 for the other half. One question tells us which, and that is one digit of the key." }], { x: 6.1, y: 5.7, w: 6.43, h: 1.05, fontSize: 14, valign: "middle" });
   }
 
-  // 5 Tier 2
+  // 6 Lock 2
   {
-    const s = add("Talk");
-    s.addText("Tier 2: the eavesdropper leaves 21% errors, the clean link leaves none", { placeholder: "title" });
-    await img(s, FIG + "bloch_bb84.png", MX, 1.55, 7.2, 2.3, "Bloch spheres of the four BB84 states: 0, 1, plus and minus");
-    steps(s, MX, 4.1, 7.0, [
-      ["Measure every qubit in a random basis", "Z: measure. X: one H, then measure. Keep only where our basis matched Alice's."],
-      ["Compare with Alice's public check bits", "Eve guesses the wrong basis half the time, and half of those flip: 25% expected."],
-      ["Build the key from the clean link only", "383 kept bits solve for the 280-bit key. The tapped link gives garbage."],
-    ], 0.92);
-    s.addChart(pres.charts.BAR, [{ name: "Errors on check bits", labels: ["link_A (clean)", "link_B (tapped)"], values: [0, 20.8] }], {
-      x: 8.1, y: 1.6, w: 4.63, h: 3.6, barDir: "col", chartColors: ["BA0C2F"], showLegend: false,
-      showTitle: true, title: "Errors on the public check bits (%)", titleFontSize: 14, titleColor: "1F2933", titleFontFace: "+mn-lt",
-      showValue: true, dataLabelPosition: "outEnd", dataLabelFormatCode: "0.0", dataLabelFontSize: 14, dataLabelColor: "1F2933", dataLabelFontFace: "+mn-lt",
-      catAxisLabelColor: "1F2933", valAxisLabelColor: "1F2933", catAxisLabelFontSize: 13, valAxisLabelFontSize: 12, catAxisLabelFontFace: "+mn-lt", valAxisLabelFontFace: "+mn-lt",
-      valAxisMaxVal: 30, valAxisMinVal: 0, valGridLine: { color: "E1E5EA", size: 0.5 }, catGridLine: { style: "none" }, objectName: "QBER chart",
-    });
-    stat(s, 8.1, 5.35, 4.63, "0 gates or 1", "per measurement circuit: nothing smaller exists", C.text1);
-    s.addNotes("Tier two is BB84. Alice sends qubits in four possible states. You see them on the Bloch spheres. We measure each qubit in a random basis. Later Alice tells us her bases, and we keep only the matching ones. Now the important part. Eve measured one link. She had to guess the basis. Half the time she guessed wrong, and then half of our results flip. So we expect twenty-five percent errors. We measured zero on link A and twenty-one percent on link B. So link B is tapped. We build the key from link A. The security comes from physics. Measuring an unknown qubit changes it.");
+    const s = add();
+    steps(s, MX, 1.75, 6.6, [
+      ["Alice sends the key one qubit at a time", "A qubit is the quantum version of a bit. She uses two lines, and a spy listens on one of them."],
+      ["Looking at a qubit disturbs it", "The spy has to guess how to look at each qubit. A wrong guess changes it."],
+      ["We compare a small sample with Alice", "A clean line shows no errors. A tapped line shows many."],
+    ], 1.2);
+    panel(s, MX, 5.45, 6.6, 1.35);
+    text(s, [{ text: "The result. ", options: { bold: true } }, { text: "Line B was tapped, so we threw it away and built the key from line A. This method is called BB84, after its inventors Bennett and Brassard and the year 1984." }], { x: MX + 0.2, y: 5.5, w: 6.2, h: 1.25, fontSize: 15, valign: "middle" });
+    s.addChart(pres.charts.BAR, [{ name: "Wrong test bits", labels: ["Line A (clean)", "Line B (spy)"], values: [0, 20.8] }],
+      Object.assign(chartLook("Test bits that came out wrong (%)"), { x: 7.6, y: 1.55, w: 5.13, h: 3.7, dataLabelFormatCode: "0.0", catAxisLabelFontSize: 14, valAxisMaxVal: 30, objectName: "Error chart" }));
+    stat(s, 7.6, 5.45, 2.47, "0 of 143", "test bits wrong on line A", false, 1.35);
+    stat(s, 10.26, 5.45, 2.47, "26 of 125", "test bits wrong on line B", true, 1.35);
   }
 
-  // 6 Tier 4
+  // 7 Lock 4
   {
-    const s = add("Talk");
-    s.addText("Tier 4: every run returns one equation about the secret", { placeholder: "title" });
-    steps(s, MX, 1.7, 4.4, [
-      ["f(x) = f(x ⊕ s)", "The function repeats with a hidden shift s. We want s, 10 bits."],
-      ["Each run gives a y with y·s = 0", "The pair x and x ⊕ s interfere. Only those y survive."],
-      ["Solve the equations classically", "About 9 independent y pin down s. Gaussian elimination, mod 2."],
-    ], 1.3);
-    panel(s, 5.3, 1.6, 3.5, 5.15);
-    text(s, "Measured y (6 of 37)", { x: 5.5, y: 1.75, w: 3.1, h: 0.4, fontSize: 14, bold: true, color: C.text1 });
+    const s = add();
+    steps(s, MX, 1.75, 4.6, [
+      ["The lock hides a 10-digit pattern", "Two different inputs always give the same output. The secret s is the difference between them."],
+      ["Every run returns one clue", "A clue is a string y that fits the secret in a fixed way: y · s = 0."],
+      ["Solve the clues together", "Each new clue halves the possibilities. Ordinary algebra finds the one that is left."],
+    ], 1.65);
+    panel(s, 5.5, 1.6, 3.6, 5.2);
+    text(s, "Six of our 37 clues", { x: 5.75, y: 1.75, w: 3.1, h: 0.4, fontSize: 15, bold: true });
     ["0011000101", "0100110001", "0101110110", "0001011011", "1101000111", "0001100101"].forEach((y, i) =>
-      text(s, y, { x: 5.5, y: 2.2 + i * 0.42, w: 3.1, h: 0.4, fontSize: 18, fontFace: "Courier New", valign: "middle" }));
-    text(s, "every one has y·s = 0", { x: 5.5, y: 4.8, w: 3.1, h: 0.4, fontSize: 14, color: C.text1 });
-    text(s, "s = 1100011000", { x: 5.5, y: 5.3, w: 3.1, h: 0.5, fontSize: 20, bold: true, color: C.accent1, fontFace: "Courier New", valign: "middle" });
-    text(s, "the only non-zero solution", { x: 5.5, y: 5.85, w: 3.1, h: 0.4, fontSize: 14, color: C.text1 });
-    await img(s, FIG + "t4_hist.png", 9.1, 1.6, 3.63, 2.9, "Histogram: all 37 measured strings satisfy y dot s equals 0");
-    table(s, 9.1, 4.75, 3.63, [2.23, 1.4], ["Method", "Queries"], [["Classical, all inputs", "1,024"], ["Classical, collision search", "about 40"], [{ text: "Simon", options: { bold: true } }, { text: "about 11", options: { bold: true, color: C.accent1 } }]], { rowH: 0.48 });
-    s.addNotes("Tier four is Simon's algorithm. The function repeats with a hidden shift s. We want s. Each run of the circuit gives a random string y. But not fully random. Every y satisfies y dot s equals zero. So each run is one equation about the secret. We took forty shots and got thirty-seven different strings. All of them satisfy the equation. Then ordinary linear algebra gives one answer for s. On average eleven runs are enough. A classical search needs about forty queries to find a collision, and this gap grows exponentially with the size.");
+      text(s, y, { x: 5.75, y: 2.2 + i * 0.42, w: 3.1, h: 0.4, fontSize: 18, fontFace: "Courier New", valign: "middle" }));
+    text(s, "Every clue fits one secret:", { x: 5.75, y: 4.85, w: 3.1, h: 0.4, fontSize: 15 });
+    text(s, "s = 1100011000", { x: 5.75, y: 5.3, w: 3.1, h: 0.5, fontSize: 20, bold: true, color: C.accent2, fontFace: "Courier New", valign: "middle" });
+    text(s, "It is the only pattern that fits them all.", { x: 5.75, y: 5.85, w: 3.1, h: 0.8, fontSize: 14 });
+    stat(s, 9.4, 1.6, 3.33, "about 40", "tries for a normal computer", true, 1.6);
+    stat(s, 9.4, 3.4, 3.33, "about 11", "runs of our circuit, on average", false, 1.6);
+    stat(s, 9.4, 5.2, 3.33, "40 of 40", "runs gave a clue that fits the secret", false, 1.6);
   }
 
-  // 7 Tiers 5 and 6
+  // 8 Locks 5 and 6
   {
-    const s = add("Talk");
-    s.addText("Tiers 5 and 6: Grover finds the key in 25 rounds, and more rounds make it worse", { placeholder: "title" });
-    await img(s, FIG + "t5_rounds.png", MX, 1.55, 6.3, 3.6, "Grover success probability against number of rounds: peak of 1.0 at 25 rounds, back to 0 at 50");
-    await img(s, FIG + "t6_hist.png", 7.1, 1.55, 5.63, 3.6, "Tier 6 histogram: 4096 shots spread over the 64 keys that pass the first-byte test");
-    stat(s, MX, 5.3, 2.9, "25 vs 512", "tier 5: Grover rounds vs average classical tries");
-    stat(s, MX + 3.1, 5.3, 2.9, "−32% CX", "our oracle vs a plain Toffoli build", C.text1);
-    stat(s, 7.1, 5.3, 2.72, "64 → 1", "tier 6: Grover returns 64 keys, a checksum keeps one");
-    stat(s, 10.01, 5.3, 2.72, "12 rounds", "64 marked keys need fewer rounds", C.text1);
-    s.addNotes("Tiers five and six are Grover search. The oracle marks the right key with a minus sign. Each round moves probability towards that key. Look at the left plot. The grey line is theory and the red dots are our measurements. At twenty-five rounds we find the key every time. But at fifty rounds the probability is back to zero. Grover is a rotation. If you rotate too far, you pass the answer. In tier six, sixty-four keys pass the test. So Grover needs only twelve rounds, and it returns all sixty-four. Then a classical checksum keeps one. We also made the oracle cheaper. Our version uses thirty-two percent fewer CNOT gates than a plain Toffoli build.");
+    const s = add();
+    await img(s, FIG + "t5_rounds.png", MX, 1.55, 6.5, 3.75, "Chance of finding the key against the number of Grover steps: it peaks at 25 steps and is back to zero at 50");
+    steps(s, 7.5, 1.75, 5.23, [
+      ["Start with every key equally likely", "Lock 5 has 1,024 possible keys."],
+      ["Each step boosts the right key", "The lock marks the right key, and the circuit moves a little more chance onto it."],
+      ["Stop at the right moment", "After 25 steps the key is certain. More steps make it worse again."],
+    ], 1.2);
+    stat(s, MX, 5.45, 3.9, "25 vs 512", "Grover steps against the average number of tries on a normal computer", false, 1.35);
+    stat(s, MX + 4.1, 5.45, 3.9, "64 → 1", "Lock 6: 64 keys pass the first test, and a quick check keeps the real one", true, 1.35);
+    stat(s, MX + 8.2, 5.45, 3.93, "12 steps", "are enough for lock 6, because more matching keys are easier to hit", false, 1.35);
   }
 
-  // 8 Tier 7
+  // 9 Lock 7
   {
-    const s = add("Talk");
-    s.addText("Tier 7: we read a 14-bit angle with 2 qubits instead of 15", { placeholder: "title" });
-    await img(s, SUB + "/tier07/diagram_iterative_qpe.png", MX, 1.55, 6.6, 3.2, "One round of iterative phase estimation: H, controlled power of U, phase correction, H, measure");
-    steps(s, 7.6, 1.7, 5.13, [
-      ["Kick the phase onto one control qubit", "Controlled U^(2^j) on the eigenstate. One round reads one bit."],
-      ["Start from the lowest bit", "Its phase is exactly 0 or π, so the result is certain."],
-      ["Remove what we already know", "A phase gate cancels the measured bits. Then read the next bit."],
-    ], 1.05);
-    text(s, "Bits as measured, lowest first", { x: MX, y: 4.95, w: 6, h: 0.35, fontSize: 14, bold: true, color: C.text1 });
+    const s = add();
+    await img(s, SUB + "/tier07/diagram_iterative_qpe.png", MX, 1.55, 6.6, 3.2, "Two of the 14 small circuits: one helper qubit, one qubit that holds the angle, and one measurement");
+    text(s, "The 14 digits, in the order we read them", { x: MX, y: 4.9, w: 6.6, h: 0.35, fontSize: 15, bold: true });
     [1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1].forEach((b, i) => {
       const x = MX + i * 0.47;
       s.addShape(pres.ShapeType.roundRect, { x, y: 5.35, w: 0.42, h: 0.55, rectRadius: 0.05, fill: { color: b ? C.accent1 : C.background2 }, line: { color: b ? C.accent1 : C.accent3, width: 0.5 }, objectName: nm("Bit") });
       text(s, String(b), { x, y: 5.35, w: 0.42, h: 0.55, fontSize: 18, bold: true, align: "center", valign: "middle", color: b ? C.background1 : C.text1 });
     });
-    text(s, "k = 13383  →  angle = 13383 / 2¹⁴", { x: MX, y: 6.05, w: 6.6, h: 0.45, fontSize: 18, bold: true, color: C.text1 });
-    stat(s, 7.6, 5.0, 2.47, "2 vs 230", "two-qubit gates: ours vs textbook");
-    stat(s, 10.26, 5.0, 2.47, "14×", "one control qubit, reused for 14 rounds", C.text1);
-    s.addNotes("Tier seven hides a fourteen-bit angle inside a gate. The textbook method is phase estimation with fourteen control qubits. We use one control qubit and repeat it fourteen times. Each round reads one bit. We start with the lowest bit, because its phase is exactly zero or pi. So the result is certain. Then a phase gate removes the bits we already know, and we read the next one. The result is two qubits, and two two-qubit gates per circuit, against two hundred and thirty for the textbook version. This is why the checker shows a flag for a small number of qubits. The scoring rules say this recycling technique is allowed, if we explain it.");
+    text(s, "Read backwards, they are the key in binary: 13383", { x: MX, y: 6.1, w: 6.6, h: 0.45, fontSize: 18, bold: true, color: C.accent2 });
+    steps(s, 7.6, 1.75, 5.13, [
+      ["The key is an angle", "Think of a clock hand. The angle is a number with 14 binary digits."],
+      ["One helper qubit reads one digit", "We read the last digit first, because it gives a clear 0 or 1."],
+      ["Subtract what we know, then repeat", "The same helper qubit is used 14 times."],
+    ], 1.1);
+    stat(s, 7.6, 5.2, 2.47, "2 vs 15", "qubits: our circuit against the textbook", false, 1.6);
+    stat(s, 10.26, 5.2, 2.47, "2 vs 230", "error-prone operations (two-qubit gates)", true, 1.6);
   }
 
-  // 9 Tiers 8-10
+  // 10 Locks 8, 9 and 10
   {
-    const s = add("Talk");
-    s.addText("Tiers 8, 9 and 10: breaking RSA means finding a period", { placeholder: "title" });
-    await img(s, SUB + "/tier08/diagram_shor.png", MX, 1.5, W - 2 * MX, 2.55, "Shor order-finding circuit with one recycled control qubit and controlled modular multipliers");
-    await img(s, FIG + "t8_hist.png", MX, 4.15, 5.9, 2.7, "Tier 8 histogram: evenly spaced peaks at multiples of 1024 divided by 12");
-    steps(s, 6.9, 4.25, 5.83, [
-      ["Powers of 2 mod 35 repeat every r = 12", "The circuit measures y near a multiple of 1024 / r."],
-      ["The period gives the factors", "gcd(2⁶ − 1, 35) = 7 and gcd(2⁶ + 1, 35) = 5."],
-      ["Same idea, bigger locks", "Tier 9: r = 30 gives 7 × 11. Tier 10: a = 14 wins 34 of 40 votes."],
-    ], 0.88);
-    s.addNotes("Tiers eight, nine and ten are Shor's algorithm. The key idea: factoring becomes finding a period. Take powers of two, modulo thirty-five. They repeat with period twelve. The circuit measures a number y, and y is always near a multiple of one thousand twenty-four divided by twelve. You see the evenly spaced peaks. From the period, two greatest common divisors give the factors, seven and five. Tier nine is the same with N equals seventy-seven and period thirty. Tier ten is Diffie-Hellman. There we measure two phases, and each shot votes for the secret exponent. Fourteen wins with thirty-four of forty votes. Like tier seven, we reuse one control qubit, so tier nine needs ten qubits, not twenty-one.");
-  }
-
-  // 10 Classical vs quantum
-  {
-    const s = add("Talk");
-    s.addText("At these sizes classical wins, so the argument is about growth", { placeholder: "title" });
-    table(s, MX, 1.6, 7.4, [1.1, 2.3, 1.9, 2.1], ["Tier", "Classical", "Quantum", "Growth, n bits"], [
-      ["1", "24 questions", "1", "n vs 1"],
-      ["3", "33 questions", "1", "2ⁿ⁻¹ + 1 vs 1"],
-      ["4", "about 40", "about 11 runs", "2^(n/2) vs n"],
-      ["5", "512 tries, 10 ms", "25 rounds, 2.5 s", "2ⁿ vs √2ⁿ"],
-      ["7", "16,384 keys, 0.06 s", "14 rounds", "2ⁿ vs n rounds"],
-      ["8–10", "instant", "5k–24k gates", "sub-exp vs n³"],
-    ], { rowH: 0.52 });
-    panel(s, MX, 5.45, 7.4, 1.3);
-    text(s, [{ text: "Where our circuits are still toys. ", options: { bold: true } }, { text: "Our Shor multiplier is a lookup table of all N values: that is more classical work than factoring 77 by hand. A scalable version builds it from adders, about n² gates." }], { x: MX + 0.2, y: 5.55, w: 7.0, h: 1.1, fontSize: 14, valign: "middle" });
-    await img(s, FIG + "scaling_grover.png", 8.3, 1.6, 4.43, 3.3, "Log plot: classical tries grow as 2 to the n, Grover rounds as the square root");
-    text(s, "Grover is only a square-root gain: a 128-bit key still needs about 2⁶⁴ rounds. Doubling the key length is the defence.", { x: 8.3, y: 5.05, w: 4.43, h: 1.6, fontSize: 14, color: C.text1 });
-    s.addNotes("Now the analysis. First, classical computers win at these sizes. A brute-force search of tier five takes ten milliseconds. Our simulated Grover takes two and a half seconds. So the argument is not speed today. It is growth. Double the key size, and classical work squares, while Grover's work only doubles. For Shor the gap is bigger: polynomial against sub-exponential. Second, some of our circuits are still toys. Our Shor multiplier is built from a table of all values. That table is more classical work than factoring seventy-seven by hand. A scalable version uses adder circuits. We say this clearly in our write-up.");
+    const s = add();
+    text(s, "Keep doubling, and keep only the remainder after dividing by 35:", { x: MX, y: 1.55, w: W - 2 * MX, h: 0.4, fontSize: 17, bold: true });
+    const seq = [1, 2, 4, 8, 16, 32, 29, 23, 11, 22, 9, 18, 1, 2, 4, 8];
+    const cwid = 0.66, step = (W - 2 * MX - cwid) / (seq.length - 1);
+    seq.forEach((v, i) => {
+      const x = MX + i * step, again = i >= 12;
+      s.addShape(pres.ShapeType.roundRect, { x, y: 2.1, w: cwid, h: 0.62, rectRadius: 0.06, fill: { color: again ? C.accent5 : C.accent1 }, line: { color: again ? C.accent2 : C.accent1, width: 1 }, objectName: nm("Number") });
+      text(s, String(v), { x, y: 2.1, w: cwid, h: 0.62, fontSize: 18, bold: true, align: "center", valign: "middle", color: again ? C.accent2 : C.background1 });
+    });
+    text(s, "The pattern is 12 numbers long.", { x: MX, y: 2.85, w: 12 * step - 0.2, h: 0.4, fontSize: 15, color: C.accent1, bold: true });
+    text(s, "Then it starts again.", { x: MX + 12 * step, y: 2.85, w: 4 * step, h: 0.4, fontSize: 15, color: C.accent2, bold: true });
+    await img(s, FIG + "t8_hist.png", MX, 3.45, 5.9, 3.35, "Results of the lock 8 circuit: 12 evenly spaced peaks");
+    steps(s, 6.9, 3.6, 5.83, [
+      ["The circuit finds the length of the pattern", "Its results land on 12 evenly spaced peaks, and that reveals the 12."],
+      ["The length gives the two hidden numbers", "Simple arithmetic turns 12 into 35\u00A0=\u00A05\u00A0×\u00A07. For lock 9 it is 77\u00A0=\u00A07\u00A0×\u00A011."],
+      ["Lock 10 uses the same idea", "It uncovers a secret number shared by two people. The answer, 14, won 34 of 40 votes."],
+    ], 1.08);
   }
 
   // 11 Hardware
   {
-    const s = add("Talk");
-    s.addText("It ran on a real quantum computer: 14 of 14 bits correct on ibm_kingston", { placeholder: "title" });
-    await img(s, SUB + "/tier07/diagram_hardware.png", MX, 1.55, 8.6, 3.6, "Hardware result: 14 measured phase points close to the ideal circle, and contrast per bit between 0.92 and 1.0");
-    stat(s, 9.5, 1.6, 3.23, "0.97", "average contrast (1 = perfect), lowest 0.92");
-    stat(s, 9.5, 3.25, 3.23, "28 circuits", "one job, 1,024 shots each, 2 two-qubit gates each", C.text1);
-    panel(s, MX, 5.35, W - 2 * MX, 1.4);
-    text(s, [{ text: "What changed for hardware. ", options: { bold: true } }, { text: "The scored solution feeds each bit into the next circuit: 14 jobs in the queue. On the device we read every round in the X and Y basis and do the same correction in software, so it is one job. Same eigenstate, same controlled U, same phase kickback. Job dbr1upujjaos73ai5tl0, 12 Nov 2026." }], { x: MX + 0.2, y: 5.45, w: W - 2 * MX - 0.4, h: 1.2, fontSize: 14, valign: "middle" });
-    s.addNotes("We ran tier seven on a real IBM quantum computer, ibm kingston. All fourteen bits came out correct, and the decrypted line matches the hash. On the left, each point is one key bit. The grey circle is the ideal result with no noise. Our points sit very close to it. The average contrast is zero point nine seven. One honest note. This is a variant of our scored circuit. The scored version feeds each bit into the next circuit, which means fourteen jobs in the queue. For hardware we read each round in two bases and do the correction in software. So it is one job. The quantum part is the same.");
+    const s = add();
+    const strength = [95.7, 95.9, 94.7, 96.2, 94.8, 100.3, 93.0, 98.4, 100.5, 102.0, 96.2, 96.1, 92.4, 100.2];
+    s.addChart(pres.charts.BAR, [{ name: "Signal strength", labels: strength.map((_, i) => String(i + 1)), values: strength }],
+      Object.assign(chartLook("Signal strength for each of the 14 digits (%, 100 = perfect)"), { x: MX, y: 1.55, w: 8.4, h: 3.75, dataLabelFormatCode: "0", dataLabelFontSize: 11, valAxisMaxVal: 120, objectName: "Hardware chart" }));
+    stat(s, 9.3, 1.55, 3.43, "14 of 14", "digits correct on ibm_kingston", false, 1.17);
+    stat(s, 9.3, 2.84, 3.43, "97%", "average signal strength (lowest: 92%)", true, 1.17);
+    stat(s, 9.3, 4.13, 3.43, "1 job", "28 small circuits, 1,024 runs each", false, 1.17);
+    panel(s, MX, 5.5, W - 2 * MX, 1.3);
+    text(s, [{ text: "What we changed for the real machine. ", options: { bold: true } }, { text: "In the simulator, each digit is fed into the next circuit, which would mean 14 separate trips through the queue. On the real machine we measured every digit in two ways and did the subtraction afterwards in software, so everything ran as one job. The quantum part is the same. Job dbr1upujjaos73ai5tl0, 12 Nov 2026." }], { x: MX + 0.2, y: 5.55, w: W - 2 * MX - 0.4, h: 1.2, fontSize: 14, valign: "middle" });
   }
 
-  // 12 Noise
+  // 12 Normal computer against quantum
   {
-    const s = add("Talk");
-    s.addText("Noise decides what survives: the gate count is the whole story", { placeholder: "title" });
-    s.addChart(pres.charts.BAR, [{ name: "Success at 0.1% error per two-qubit gate", labels: ["Tier 7 (2 gates)", "Tier 1 (143)", "Textbook QPE (230)", "Tier 6 (2,064)", "Tier 5 (4,750)"], values: [100, 86, 84, 14, 5] }], {
-      x: MX, y: 1.55, w: 7.6, h: 5.2, barDir: "col", chartColors: ["BA0C2F"], showLegend: false,
-      showTitle: true, title: "Runs that find the key at 0.1% error per two-qubit gate (%, simulated)", titleFontSize: 14, titleColor: "1F2933", titleFontFace: "+mn-lt",
-      showValue: true, dataLabelPosition: "outEnd", dataLabelFormatCode: "0", dataLabelFontSize: 14, dataLabelColor: "1F2933", dataLabelFontFace: "+mn-lt",
-      catAxisLabelColor: "1F2933", valAxisLabelColor: "1F2933", catAxisLabelFontSize: 13, valAxisLabelFontSize: 12, catAxisLabelFontFace: "+mn-lt", valAxisLabelFontFace: "+mn-lt",
-      valAxisMaxVal: 110, valAxisMinVal: 0, valGridLine: { color: "E1E5EA", size: 0.5 }, catGridLine: { style: "none" }, objectName: "Noise chart",
-    });
+    const s = add();
+    table(s, MX, 1.6, 7.4, [1.1, 3.3, 3.0], ["Lock", "Normal computer", "Quantum circuit"], [
+      ["1", "24 questions", "1 question"],
+      ["3", "up to 33 questions per box", "1 question per box"],
+      ["4", "about 40 tries", "about 11 runs"],
+      ["5", "512 tries on average", "25 steps"],
+      ["7", "16,384 keys to try", "14 small circuits"],
+      ["8 to 10", "easy at this size, hopeless for real keys", "grows slowly with the key length"],
+    ].map((r) => [{ text: r[0], options: { bold: true, color: C.accent1 } }, r[1], r[2]]), { rowH: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.72] });
+    panel(s, MX, 5.5, 7.4, 1.3, C.accent5);
+    text(s, [{ text: "Two honest limits. ", options: { bold: true } }, { text: "A laptop opens lock 5 in 10 milliseconds, and simulating our circuit takes 2.5 seconds. Our Shor circuits also use a shortcut that works only for small numbers." }], { x: MX + 0.2, y: 5.55, w: 7.0, h: 1.2, fontSize: 15, valign: "middle" });
+    await img(s, FIG + "scaling_grover.png", 8.3, 1.55, 4.43, 3.3, "Tries needed against key length: the normal computer's line rises twice as steeply as Grover's");
+    text(s, "Every extra bit doubles the work for a normal computer. For Grover, the work doubles only after two extra bits.", { x: 8.3, y: 5.0, w: 4.43, h: 1.8, fontSize: 15 });
+  }
+
+  // 13 Noise
+  {
+    const s = add();
+    s.addChart(pres.charts.BAR, [{ name: "Runs that find the key", labels: ["Lock 7 (2)", "Lock 1 (143)", "Lock 7, textbook (230)", "Lock 6 (2,064)", "Lock 5 (4,750)"], values: [100, 86, 84, 14, 5] }],
+      Object.assign(chartLook("Runs that still find the key when 1 in 1,000 operations goes wrong (%). In brackets: operations in the circuit"), { x: MX, y: 1.55, w: 7.6, h: 5.25, dataLabelFormatCode: "0", valAxisMaxVal: 110, objectName: "Noise chart" }));
     steps(s, 8.6, 1.75, 4.13, [
-      ["Rule of thumb", "A circuit survives while error rate × gate count stays well below 1."],
-      ["Small circuits can vote", "Tier 1 recovers the key at every tested rate with a majority vote of 101 shots."],
-      ["Shor at N = 77 cannot", "24,000 gates at 0.1% is about 24 errors per run. It needs error correction."],
-    ], 1.45);
-    text(s, "Depolarizing noise on Aer. Tier 1 and textbook QPE are single-shot. We did not run error mitigation (ZNE, PEC).", { x: 8.6, y: 6.0, w: 4.13, h: 0.75, fontSize: 12, color: C.text1 });
-    s.addNotes("What about noise on the bigger circuits? We simulated every tier with an error after each two-qubit gate. At zero point one percent error, which is close to today's hardware, tier seven with two gates always works. Tier one with one hundred forty-three gates still works eighty-six percent of the time. Tier five with almost five thousand gates finds the key in only five percent of runs. The rule is simple. A circuit survives while error rate times gate count stays well below one. Our Shor circuit for seventy-seven has twenty-four thousand gates. That is about twenty-four errors per run. It needs error correction. We did not run error mitigation, and we say so.");
+      ["Every operation can fail", "We simulated 1 failure in every 1,000 two-qubit operations, roughly the level of today's machines."],
+      ["Short circuits survive", "Lock 7 always works. Lock 1 works 86 times in 100."],
+      ["Long circuits do not", "Our circuit for 77 has 24,000 operations, so about 24 go wrong in every run. It needs error correction."],
+    ], 1.5);
+    text(s, "A simple noise model on a simulator. We did not use error-mitigation techniques.", { x: 8.6, y: 6.25, w: 4.13, h: 0.55, fontSize: 12 });
   }
 
-  // 13 Scaling
+  // 14 What difference does this make
   {
-    const s = add("Talk");
-    s.addText("From toy locks to real keys: what would have to change", { placeholder: "title" });
-    table(s, MX, 1.6, W - 2 * MX, [2.6, 4.3, 5.233], ["", "What we ran", "A real key"], [
-      [{ text: "Factoring (RSA)", options: { bold: true } }, "N = 77: 10 qubits, 24,000 gates, lookup-table multiplier", "RSA-2048: thousands of error-corrected qubits, billions of gates. Estimates: 20 million noisy qubits for 8 hours (Gidney and Ekerå, 2019); under 1 million in under a week (Gidney, 2025)"],
-      [{ text: "Key search (Grover)", options: { bold: true } }, "10-bit key: 25 rounds, 4,750 gates", "128-bit key: about 2⁶⁴ rounds of a far larger oracle. Double the key length and the gain is gone"],
-      [{ text: "Key exchange (BB84)", options: { bold: true } }, "1,024 qubits per link, perfect devices", "Real links are noisy without Eve: error correction, privacy amplification, an error threshold near 11%"],
-      [{ text: "Hardware today", options: { bold: true } }, "2 gates: 14 of 14 bits on ibm_kingston", "Thousands of gates: needs error correction, not better luck"],
-    ], { rowH: [0.45, 1.05, 0.8, 0.8, 0.6] });
-    panel(s, MX, 6.0, W - 2 * MX, 0.78);
-    text(s, "All ten locks opened. The algorithms are ready; the machines that can run them at real size are not here yet.", { x: MX + 0.2, y: 6.0, w: W - 2 * MX - 0.4, h: 0.78, fontSize: 18, bold: true, color: C.accent1, valign: "middle" });
-    s.addNotes("Last slide: what changes at real sizes. For RSA, we factored seventy-seven with ten qubits. RSA two thousand forty-eight needs thousands of error-corrected qubits and billions of gates. Published estimates went from twenty million noisy qubits in two thousand nineteen to under one million in two thousand twenty-five. For Grover, a one hundred twenty-eight bit key still needs two to the sixty-four rounds. Doubling the key length is enough defence. For BB84, real links have noise even without Eve, so they need error correction and a threshold. To close: we opened all ten locks. The algorithms are ready. The machines that can run them at real size are not here yet. Thank you. I am happy to take questions.");
+    const s = add();
+    const cw = (W - 2 * MX - 0.8) / 3;
+    const cards = [
+      ["10 of 10", "The attacks are real", "We ran every one of these algorithms from start to finish on small keys. Every key came out of a quantum circuit, and one came out of a real machine.", false],
+      ["2, not 15", "Small circuits work today", "Lock 7 needs 2 qubits instead of 15, and lock 9 needs 10 instead of 21. That is why lock 7 survived a real, noisy machine.", true],
+      ["20 M → 1 M", "The clock is ticking for RSA", "Estimated qubits needed to break real RSA: 20 million in 2019, under 1 million in 2025. Quantum-safe encryption standards were published in 2024.", false],
+    ];
+    cards.forEach((c, i) => {
+      const x = MX + i * (cw + 0.4);
+      panel(s, x, 1.6, cw, 3.75, c[3] ? C.accent5 : C.background2);
+      text(s, c[0], { x: x + 0.25, y: 1.75, w: cw - 0.5, h: 0.8, fontSize: 36, bold: true, color: c[3] ? C.accent2 : C.accent1, fontFace: THEME.headFontFace, valign: "middle" });
+      text(s, c[1], { x: x + 0.25, y: 2.65, w: cw - 0.5, h: 0.4, fontSize: 18, bold: true });
+      text(s, c[2], { x: x + 0.25, y: 3.2, w: cw - 0.5, h: 2.0, fontSize: 16 });
+    });
+    panel(s, MX, 5.65, W - 2 * MX, 1.15, C.accent6);
+    text(s, "All ten locks are open. The algorithms are ready. The machines are not ready yet, but they are coming.", { x: MX + 0.3, y: 5.65, w: W - 2 * MX - 0.6, h: 1.15, fontSize: 20, bold: true, color: C.background1, valign: "middle" });
   }
 
   // ================= BACKUP =================
   pres.addSection({ title: "Backup" });
+  const addBackup = (title) => { const s = pres.addSlide({ masterName: "BACKUP", sectionTitle: "Backup" }); s.addText(title, { placeholder: "title" }); return s; };
+
+  // The numbers the official checker records for every lock.
+  {
+    const s = addBackup("Backup: what each circuit costs, from the official checker");
+    const rows = [
+      ["1", "Bernstein-Vazirani", "25", "143", "44", "16 runs, 1 question each"],
+      ["2", "BB84 key exchange", "1", "0", "3", "2,048 circuits, 1 run each"],
+      ["3", "Deutsch-Jozsa", "7", "7,808", "8,771", "24 circuits, 1 question each"],
+      ["4", "Simon", "20", "179", "195", "40 runs, about 11 needed"],
+      ["5", "Grover", "19", "4,750", "4,960", "256 runs, 25 steps"],
+      ["6", "Grover, then a classical check", "16", "2,064", "2,826", "4,096 runs, 12 steps"],
+      ["7", "Phase estimation, one digit at a time", "2", "2", "11", "14 circuits, 64 runs each"],
+      ["8", "Shor, N = 35", "9", "5,053", "10,406", "24 runs"],
+      ["9", "Shor, N = 77", "10", "23,968", "45,696", "24 runs"],
+      ["10", "Shor for a shared secret, p = 83", "10", "13,157", "26,112", "40 runs"],
+    ];
+    table(s, MX, 1.6, W - 2 * MX, [0.8, 4.2, 1.2, 1.7, 1.2, 3.033], ["Lock", "Algorithm", "Qubits", "Two-qubit gates", "Depth", "Runs"], rows, { rowH: 0.415 });
+    text(s, "Depth is the number of layers in the circuit. In locks 1, 3 and 4, almost every gate belongs to the lock that the organisers provided, not to our own part of the circuit.", { x: MX, y: 6.25, w: W - 2 * MX, h: 0.6, fontSize: 14 });
+  }
+
   const backups = [
-    { t: "Tier 1: The Parity Vault (Bernstein-Vazirani)", d: SUB + "/tier01/diagram_bernstein_vazirani.png", f: FIG + "t1_hist.png", rows: [
-      ["Hidden", "24-bit string s; the oracle computes s·x"], ["Runs", "1 circuit, 16 shots, 1 oracle call per shot"], ["Outcome", "110001111100110101001001 in 16 of 16 shots"],
-      ["Scored circuit", "143 two-qubit gates, depth 44, 290 gates, 25 qubits"], ["Classical work", "XOR the 3 key bytes with the ciphertext"], ["Classical cost", "24 questions, one per bit"]] },
-    { t: "Tier 2: Two Links (BB84)", d: SUB + "/tier02/diagram_bb84.png", f: FIG + "bloch_bb84.png", rows: [
-      ["Hidden", "280-bit key sent as 1,024 qubits per link"], ["Runs", "2,048 one-qubit circuits, 1 shot each"], ["Outcome", "link_A: 0 of 143 check bits wrong. link_B: 26 of 125 wrong"],
-      ["Scored circuit", "0 two-qubit gates, depth 3, 3 gates, 1 qubit"], ["Classical work", "Sifting, error count, one GF(2) solve (reconcile)"], ["Classical cost", "A classical channel cannot detect a copy at all"]] },
-    { t: "Tier 3: Twenty-Four Seals (Deutsch-Jozsa)", d: SUB + "/tier03/diagram_deutsch_jozsa.png", f: FIG + "t3_hist.png", rows: [
-      ["Hidden", "24 key bits: constant = 0, balanced = 1"], ["Runs", "24 circuits, 16 shots, 1 oracle call each"], ["Outcome", "Key 110010110010100010000000"],
-      ["Scored circuit", "7,808 two-qubit gates, depth 8,771, 7 qubits (oracle)"], ["Our own gates", "1 X and 13 H, no two-qubit gates"], ["Classical cost", "33 questions per seal to be certain"]] },
-    { t: "Tier 4: The Echo (Simon)", d: SUB + "/tier04/diagram_simon.png", f: FIG + "t4_hist.png", rows: [
-      ["Hidden", "10-bit s with f(x) = f(x ⊕ s)"], ["Runs", "1 circuit, 40 shots, 1 oracle call per shot"], ["Outcome", "37 different y, all with y·s = 0; s = 1100011000"],
-      ["Scored circuit", "179 two-qubit gates, depth 195, 451 gates, 20 qubits"], ["Classical work", "Gaussian elimination mod 2"], ["Alternatives", "Grover also finds s, with 7,310 two-qubit gates"]] },
-    { t: "Tier 5: The Small Safe (Grover)", d: SUB + "/tier05/diagram_grover.png", f: FIG + "t5_hist.png", rows: [
-      ["Hidden", "10-bit key of a toy cipher; plaintext starts with QC"], ["Runs", "1 circuit, 256 shots, 25 rounds"], ["Outcome", "Key 263 in 256 of 256 shots"],
-      ["Scored circuit", "4,750 two-qubit gates, depth 4,960, 19 qubits"], ["Oracle", "12 checks from 2 known bytes, relative-phase Toffolis"], ["Classical cost", "512 tries on average, 10 ms"]] },
-    { t: "Tier 6: The Bigger Safe (Grover with 64 marked keys)", d: SUB + "/tier06/diagram_grover.png", f: FIG + "t6_hist.png", rows: [
-      ["Hidden", "14-bit key; 64 keys pass the first-byte test"], ["Runs", "1 circuit, 4,096 shots, 12 rounds"], ["Outcome", "64 candidate keys; the checksum keeps 5401"],
-      ["Scored circuit", "2,064 two-qubit gates, depth 2,826, 16 qubits"], ["If the count is wrong", "Assuming 1 or 1,024 marked keys drops success sharply"], ["Classical cost", "8,192 tries on average, 0.11 s"]] },
-    { t: "Tier 7: The Hidden Angle (iterative phase estimation)", d: SUB + "/tier07/diagram_iterative_qpe.png", f: SUB + "/tier07/diagram_hardware.png", rows: [
-      ["Hidden", "Angle k / 2¹⁴ in the eigenvalue of a one-qubit gate"], ["Runs", "14 circuits in series, 64 shots each"], ["Outcome", "k = 13383 = 11010001000111"],
-      ["Scored circuit", "2 two-qubit gates, depth 11, 16 gates, 2 qubits"], ["Checker flag", "Under 8 active qubits: allowed, the control is recycled"], ["Powers of U", "Built from U's matrix by squaring, as the tier allows"]] },
-    { t: "Tier 8: The Wrapped Key, N = 35 (Shor)", d: SUB + "/tier08/diagram_shor.png", f: FIG + "t8_hist.png", rows: [
-      ["Hidden", "RSA modulus 35; the key is wrapped with it"], ["Runs", "1 circuit, 24 shots, base a = 2"], ["Outcome", "r = 12, so 35 = 5 × 7"],
-      ["Scored circuit", "5,053 two-qubit gates, depth 10,406, 9 qubits"], ["Classical work", "Continued fractions, gcd, modular inverse"], ["Alternatives", "Textbook Shor 18 qubits; Grover factoring 1,776 CX"]] },
-    { t: "Tier 9: The Wrapped Key, N = 77 (Shor)", d: SUB + "/tier09/diagram_shor.png", f: FIG + "t9_hist.png", rows: [
-      ["Hidden", "RSA modulus 77, e = 7"], ["Runs", "1 circuit, 24 shots, base a = 2"], ["Outcome", "r = 30, so 77 = 7 × 11, d = 43, key 31"],
-      ["Scored circuit", "23,968 two-qubit gates, depth 45,696, 10 qubits"], ["Multiplier", "Permutation of 1..76 as a chain of value swaps"], ["Alternatives", "Textbook Shor 21 qubits; Grover factoring 4,056 CX"]] },
-    { t: "Tier 10: The Handshake (Shor for discrete log)", d: SUB + "/tier10/diagram_shor.png", f: FIG + "t10_hist.png", rows: [
-      ["Hidden", "Exponent a with 3^a = 11 mod 83, subgroup order 41"], ["Runs", "1 circuit, 40 shots, 7 phase bits per register"], ["Outcome", "a = 14 with 34 of 40 votes; shared secret from B = 49"],
-      ["Scored circuit", "13,157 two-qubit gates, depth 26,112, 10 qubits"], ["Classical work", "Rounding, modular inverse, one check of g^a"], ["Alternatives", "Grover search 49,698 CX; baby-step giant-step classically"]] },
+    { t: "Backup, lock 1: the Parity Vault (Bernstein-Vazirani)", d: SUB + "/tier01/diagram_bernstein_vazirani.png", f: FIG + "t1_hist.png", rows: [
+      ["Hidden", "A 24-digit code s"], ["Runs", "1 circuit, 16 runs, 1 question per run"], ["Outcome", "110001111100110101001001 in 16 of 16 runs"],
+      ["Circuit cost", "25 qubits, 143 two-qubit gates, depth 44"], ["After the circuit", "The code is the 3-byte key that unscrambles the file"], ["Normal computer", "24 questions, one for each digit"]] },
+    { t: "Backup, lock 2: Two Links (BB84)", d: SUB + "/tier02/diagram_bb84.png", f: FIG + "bloch_bb84.png", rows: [
+      ["Hidden", "A 280-bit key, sent as 1,024 qubits on each line"], ["Runs", "2,048 one-qubit circuits, 1 run each"], ["Outcome", "Line A: 0 of 143 test bits wrong. Line B: 26 of 125 wrong"],
+      ["Circuit cost", "1 qubit, no two-qubit gates, depth 3"], ["After the circuit", "Keep the matching positions, count errors, rebuild the key"], ["Normal computer", "An ordinary line cannot reveal that a spy copied the key"]] },
+    { t: "Backup, lock 3: Twenty-Four Seals (Deutsch-Jozsa)", d: SUB + "/tier03/diagram_deutsch_jozsa.png", f: FIG + "t3_hist.png", rows: [
+      ["Hidden", "24 key digits: always-the-same box = 0, half-and-half box = 1"], ["Runs", "24 circuits, 16 runs each, 1 question per run"], ["Outcome", "Key 110010110010100010000000"],
+      ["Circuit cost", "7 qubits, 7,808 two-qubit gates, nearly all inside the provided lock"], ["Our own gates", "1 X gate and 13 H gates"], ["Normal computer", "Up to 33 questions per box to be certain"]] },
+    { t: "Backup, lock 4: the Echo (Simon)", d: SUB + "/tier04/diagram_simon.png", f: FIG + "t4_hist.png", rows: [
+      ["Hidden", "A 10-digit pattern s, where inputs x and x ⊕ s give the same output"], ["Runs", "1 circuit, 40 runs, 1 question per run"], ["Outcome", "37 different clues, all with y · s = 0, so s = 1100011000"],
+      ["Circuit cost", "20 qubits, 179 two-qubit gates, depth 195"], ["After the circuit", "Solve the clues as equations with 0s and 1s"], ["Normal computer", "About 40 tries to find two inputs with the same output"]] },
+    { t: "Backup, lock 5: the Small Safe (Grover)", d: SUB + "/tier05/diagram_grover.png", f: FIG + "t5_hist.png", rows: [
+      ["Hidden", "A 10-bit key of a small cipher; the text starts with QC"], ["Runs", "1 circuit, 256 runs, 25 steps"], ["Outcome", "Key 263 in 256 of 256 runs"],
+      ["Circuit cost", "19 qubits, 4,750 two-qubit gates, depth 4,960"], ["How the lock marks the key", "It checks that the first two letters decrypt to Q and C"], ["Normal computer", "512 tries on average, 10 milliseconds"]] },
+    { t: "Backup, lock 6: the Bigger Safe (Grover with 64 matching keys)", d: SUB + "/tier06/diagram_grover.png", f: FIG + "t6_hist.png", rows: [
+      ["Hidden", "A 14-bit key; 64 keys pass the test on the first letter"], ["Runs", "1 circuit, 4,096 runs, 12 steps"], ["Outcome", "64 candidate keys; a classical check keeps key 5401"],
+      ["Circuit cost", "16 qubits, 2,064 two-qubit gates, depth 2,826"], ["Why 12 steps", "More matching keys need fewer steps; the wrong count ruins the result"], ["Normal computer", "8,192 tries on average, 0.11 seconds"]] },
+    { t: "Backup, lock 7: the Hidden Angle (phase estimation, one digit at a time)", d: SUB + "/tier07/diagram_iterative_qpe.png", f: SUB + "/tier07/diagram_hardware.png", rows: [
+      ["Hidden", "An angle k / 2¹⁴ stored inside a one-qubit gate"], ["Runs", "14 circuits, one after another, 64 runs each"], ["Outcome", "k = 13383, which is 11010001000111 in binary"],
+      ["Circuit cost", "2 qubits, 2 two-qubit gates, depth 11"], ["Checker note", "It flags circuits under 8 qubits; reusing one qubit is allowed"], ["Normal computer", "Try all 16,384 keys"]] },
+    { t: "Backup, lock 8: the Wrapped Key, N = 35 (Shor)", d: SUB + "/tier08/diagram_shor.png", f: FIG + "t8_hist.png", rows: [
+      ["Hidden", "The two numbers that multiply to 35; they unwrap the key"], ["Runs", "1 circuit, 24 runs, doubling as the pattern"], ["Outcome", "Pattern length 12, so 35 = 5 × 7"],
+      ["Circuit cost", "9 qubits, 5,053 two-qubit gates, depth 10,406"], ["After the circuit", "Turn each result into a fraction, then simple arithmetic"], ["Textbook version", "18 qubits instead of 9"]] },
+    { t: "Backup, lock 9: the Wrapped Key, N = 77 (Shor)", d: SUB + "/tier09/diagram_shor.png", f: FIG + "t9_hist.png", rows: [
+      ["Hidden", "The two numbers that multiply to 77"], ["Runs", "1 circuit, 24 runs, doubling as the pattern"], ["Outcome", "Pattern length 30, so 77 = 7 × 11, and the key is 31"],
+      ["Circuit cost", "10 qubits, 23,968 two-qubit gates, depth 45,696"], ["Honest limit", "The multiplication step is a list of all answers; it does not scale"], ["Textbook version", "21 qubits instead of 10"]] },
+    { t: "Backup, lock 10: the Handshake (Shor for a shared secret)", d: SUB + "/tier10/diagram_shor.png", f: FIG + "t10_hist.png", rows: [
+      ["Hidden", "The secret number a with 3^a = 11 (remainders after dividing by 83)"], ["Runs", "1 circuit, 40 runs"], ["Outcome", "a = 14, with 34 of 40 votes"],
+      ["Circuit cost", "10 qubits, 13,157 two-qubit gates, depth 26,112"], ["After the circuit", "Each run votes for a value of a; one check confirms the winner"], ["Why it is the hardest", "Two patterns are measured at once instead of one"]] },
   ];
   for (const b of backups) {
-    const s = add("Backup", "BACKUP");
-    s.addText(b.t, { placeholder: "title" });
+    const s = addBackup(b.t);
     await img(s, b.d, MX, 1.55, 6.0, 2.55, "Circuit diagram for " + b.t);
-    await img(s, b.f, MX, 4.2, 6.0, 2.6, "Measurement result for " + b.t);
-    table(s, 6.9, 1.6, W - MX - 6.9, [1.75, W - MX - 6.9 - 1.75], ["Item", "Our result"], b.rows.map((r) => [{ text: r[0], options: { bold: true } }, r[1]]), { rowH: 0.7 });
+    await img(s, b.f, MX, 4.2, 6.0, 2.6, "Measured result for " + b.t);
+    table(s, 6.9, 1.6, W - MX - 6.9, [1.85, W - MX - 6.9 - 1.85], ["Item", "Our result"], b.rows.map((r) => [{ text: r[0], options: { bold: true } }, r[1]]), { rowH: 0.7 });
   }
 
   await pres.writeFile({ fileName: OUT });
   await applyTheme(OUT, THEME);
   console.log("wrote", OUT);
+
+  // ---------- speaker notes file ----------
+  const count = (t) => t.split(/\s+/).length;
+  const total = TALK.reduce((a, t) => a + count(t.say), 0);
+  let md = "# Speaker notes: Cryptographers, 10 minutes\n\n";
+  md += "This is the same text as the notes under each slide in `Cryptographers.pptx`. It is written to be spoken aloud, in full sentences. Read it out loud a few times, then change any sentence that does not sound like you.\n\n";
+  md += `Total: ${total} words. That is about ${(total / 130).toFixed(1)} minutes at a calm 130 words per minute, and about ${(total / 145).toFixed(1)} minutes at a normal 145.\n\n`;
+  md += "If time runs short, slides 12 and 13 can each be cut to their first three sentences.\n";
+  TALK.forEach((t, i) => {
+    const w = count(t.say);
+    md += `\n## Slide ${i + 1}: ${t.title}\n\n_${w} words, about ${Math.round(w / 130 * 60)} seconds_\n\n${t.say}\n`;
+    for (const [q, a] of t.ask || []) md += `\n**If a judge asks, "${q}"** ${a}\n`;
+  });
+  md += "\n## Backup slides\n\nSlide 15 is the table of circuit costs from the official checker. Slides 16 to 25 hold one page for each lock, with its circuit, its measured result and its numbers. Jump to them if a judge asks about one lock in detail.\n";
+  fs.writeFileSync(NOTES_OUT, md);
+  console.log("wrote", NOTES_OUT, total, "words");
 }
 main().catch((e) => { console.error(e); process.exit(1); });

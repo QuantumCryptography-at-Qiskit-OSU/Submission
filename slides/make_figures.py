@@ -23,8 +23,9 @@ sys.path.insert(0, str(Path.cwd()))
 
 from common import load_locked  # noqa: E402
 
-SCARLET, SLATE, INK = "#BA0C2F", "#5B6770", "#1F2933"
-plt.rcParams.update({"font.family": "DejaVu Sans", "font.size": 13, "axes.edgecolor": SLATE,
+# Qiskit-style palette: blue, pink and white. The old names are kept so the plots below stay unchanged.
+SCARLET, SLATE, INK = "#0F62FE", "#D02670", "#001141"
+plt.rcParams.update({"font.family": "DejaVu Sans", "font.size": 14, "axes.edgecolor": SLATE,
                      "axes.labelcolor": INK, "xtick.color": INK, "ytick.color": INK,
                      "axes.spines.top": False, "axes.spines.right": False})
 data = {}
@@ -47,7 +48,7 @@ def histogram(counts, name, title, colors=SCARLET, figsize=(7, 4), legend=None, 
     fig, ax = plt.subplots(figsize=figsize)
     plot_histogram(counts, ax=ax, color=colors, legend=legend, **kwargs)
     ax.set_title(title, color=INK, fontsize=13)
-    ax.set_ylabel("shots")
+    ax.set_ylabel("runs")
     ax.grid(False)
     save(fig, name)
 
@@ -65,7 +66,7 @@ def bloch(vectors, labels, name):
 t1 = load(1)
 counts = t1.run()
 data["tier1"] = {"counts": counts, "shots": t1.SHOTS}
-histogram(counts, "t1_hist.png", "Tier 1: all 16 shots give the same 24-bit string", figsize=(5, 4))
+histogram(counts, "t1_hist.png", "Lock 1: all 16 runs give the same 24-digit code", figsize=(5, 4))
 
 # Bloch spheres: the |-> target and the four BB84 states.
 bloch([[-1, 0, 0]], ["target qubit in |−⟩"], "bloch_minus.png")
@@ -86,11 +87,11 @@ data["tier3"] = {"key": key3, "constant_oracle": constant, "balanced_oracle": ba
                  "constant_counts": all_counts[constant], "balanced_counts": all_counts[balanced]}
 fig, axes = plt.subplots(1, 2, figsize=(11, 4))
 plot_histogram(all_counts[constant], ax=axes[0], color=SLATE)
-axes[0].set_title(f"Oracle {constant}: constant → always 000000 → bit 0", fontsize=12)
+axes[0].set_title("A box that is always the same: every run gives 000000", fontsize=12)
 plot_histogram(all_counts[balanced], ax=axes[1], color=SCARLET)
-axes[1].set_title(f"Oracle {balanced}: balanced → never 000000 → bit 1", fontsize=12)
+axes[1].set_title("A half-and-half box: no run gives 000000", fontsize=12)
 for ax in axes:
-    ax.set_ylabel("shots")
+    ax.set_ylabel("runs")
     ax.grid(False)
 save(fig, "t3_hist.png")
 
@@ -103,14 +104,14 @@ data["tier4"] = {"s": format(s, "010b"), "shots": t4.SHOTS, "distinct_y": len(ys
                  "sample_y": [format(y, "010b") for y in ys[:6]], "y_dot_s_zero": dots.count(0),
                  "y_dot_s_one": dots.count(1)}
 histogram({"y·s = 0": dots.count(0), "y·s = 1": dots.count(1)}, "t4_hist.png",
-          f"Tier 4: {len(ys)} different strings y, all with y·s = 0", figsize=(5, 4))
+          f"Lock 4: all {len(ys)} different clues fit the secret", figsize=(5, 4))
 
 # Tier 5: Grover at the best number of rounds.
 t5 = load(5)
 counts5 = t5.run_search()
 data["tier5"] = {"shots": t5.SHOTS, "top": counts5.most_common(3)}
 histogram({format(k, "010b"): n for k, n in counts5.items()}, "t5_hist.png",
-          "Tier 5: 256 shots after 25 Grover rounds", figsize=(5, 4))
+          "Lock 5: all 256 runs give the same key after 25 steps", figsize=(5, 4))
 
 # Tier 6: Grover with 64 marked keys, then the classical checksum filter.
 t6 = load(6)
@@ -120,8 +121,8 @@ data["tier6"] = {"shots": t6.SHOTS, "distinct_keys": len(counts6), "top5": count
 fig, ax = plt.subplots(figsize=(7, 4))
 ax.bar(range(len(ordered)), ordered, color=[SCARLET if i < 64 else SLATE for i in range(len(ordered))], width=1.0)
 ax.set_xlabel("measured keys, most frequent first")
-ax.set_ylabel("shots")
-ax.set_title(f"Tier 6: {t6.SHOTS} shots land on the 64 keys that pass the first byte", fontsize=13)
+ax.set_ylabel("runs")
+ax.set_title(f"Lock 6: {t6.SHOTS} runs land on the 64 keys that pass the first test", fontsize=13)
 save(fig, "t6_hist.png")
 
 # Tier 7: one bit per round.
@@ -145,9 +146,9 @@ for tier in (8, 9):
     for j in range(r + 1):
         ax.axvline(j * 2 ** t_bits / r, color=SLATE, lw=0.5, ls=":", zorder=0)
     ax.set_xlim(0, 2 ** t_bits)
-    ax.set_xlabel(f"measured y (0 to 2^{t_bits} − 1)")
-    ax.set_ylabel("shots (of 2048)")
-    ax.set_title(f"Tier {tier}: peaks sit at multiples of 2^{t_bits} / r, with r = {r} for a = {a}", fontsize=13)
+    ax.set_xlabel("number measured by the circuit")
+    ax.set_ylabel("runs (of 2,048)")
+    ax.set_title(f"Lock {tier}: the results land on {r} evenly spaced peaks", fontsize=13)
     save(fig, f"t{tier}_hist.png")
 
 # Tier 10: discrete log. Each shot (y_g, y_A) votes for an exponent.
@@ -158,20 +159,18 @@ data["tier10"] = {"parameters": {k: v for k, v in parameters.items() if isinstan
                   "a": a10, "votes_top3": votes.most_common(3), "shots": t10.SHOTS}
 fig, ax = plt.subplots(figsize=(7, 4))
 ax.bar(list(votes), list(votes.values()), color=[SCARLET if v == a10 else SLATE for v in votes])
-ax.set_xlabel("candidate exponent a")
-ax.set_ylabel("votes (shots)")
-ax.set_title(f"Tier 10: {t10.SHOTS} shots vote for the exponent, a = {a10} wins", fontsize=13)
+ax.set_xlabel("candidate secret number")
+ax.set_ylabel("votes (runs)")
+ax.set_title(f"Lock 10: {t10.SHOTS} runs vote for the secret number, and {a10} wins", fontsize=13)
 save(fig, "t10_hist.png")
 
 # Scaling: classical tries against Grover rounds, for one marked key in 2^n.
 n = np.arange(8, 129)
 fig, ax = plt.subplots(figsize=(7, 4))
-ax.semilogy(n, 2.0 ** (n - 1), color=SLATE, lw=2.5, label="classical: 2^n / 2 tries")
-ax.semilogy(n, np.pi / 4 * 2.0 ** (n / 2), color=SCARLET, lw=2.5, label="Grover: (π/4)·√(2^n) rounds")
-ax.scatter([10], [25], color=SCARLET, zorder=3)
-ax.annotate("tier 5: 25 rounds", (10, 25), textcoords="offset points", xytext=(10, -4))
-ax.set_xlabel("key size n (bits)")
-ax.set_ylabel("oracle calls")
+ax.semilogy(n, 2.0 ** (n - 1), color=SLATE, lw=2.5, label="normal computer")
+ax.semilogy(n, np.pi / 4 * 2.0 ** (n / 2), color=SCARLET, lw=2.5, label="Grover's algorithm")
+ax.set_xlabel("key length (bits)")
+ax.set_ylabel("tries needed")
 ax.legend(frameon=False)
 save(fig, "scaling_grover.png")
 
@@ -181,14 +180,16 @@ theta = np.arcsin(np.sqrt(1 / 1024))
 measured = {0: 0.001, 1: 0.011, 2: 0.032, 5: 0.125, 10: 0.382, 15: 0.696, 20: 0.934, 25: 1.000,
             30: 0.904, 40: 0.344, 50: 0.000}
 fig, ax = plt.subplots(figsize=(7, 4))
-ax.plot(rounds, np.sin((2 * rounds + 1) * theta) ** 2, color=SLATE, lw=2.5, label="theory: sin²((2k+1)θ)")
-ax.scatter(list(measured), list(measured.values()), color=SCARLET, zorder=3, s=60, label="measured on Aer")
-ax.annotate("25 rounds: key found", (25, 1.0), textcoords="offset points", xytext=(-165, 2), color=SCARLET)
-ax.annotate("50 rounds: back to zero", (50, 0.0), textcoords="offset points", xytext=(-175, 12), color=SCARLET)
-ax.set_xlabel("Grover rounds k")
-ax.set_ylabel("chance of measuring the key")
+ax.plot(rounds, np.sin((2 * rounds + 1) * theta) ** 2, color=SLATE, lw=2.5, label="theory")
+ax.scatter(list(measured), list(measured.values()), color=SCARLET, zorder=3, s=60, label="our results (simulator)")
+ax.annotate("25 steps: key found", (25, 1.0), textcoords="offset points", xytext=(-70, 12), color=SCARLET)
+ax.annotate("50 steps: back to zero", (50, 0.0), textcoords="offset points", xytext=(10, 6), color=SCARLET)
+ax.set_xlabel("number of Grover steps")
+ax.set_ylabel("chance of finding the key")
 ax.legend(frameon=False, loc="upper right", fontsize=11)
-ax.set_xlim(-1, 62)
+ax.set_xlim(-1, 84)
+ax.set_ylim(-0.03, 1.15)
+ax.set_xticks(range(0, 51, 10))
 save(fig, "t5_rounds.png")
 
 (OUT / "slide_data.json").write_text(json.dumps(data, indent=1, default=str))
